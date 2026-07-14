@@ -1,5 +1,6 @@
 package com.example.agriflowapplication;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
@@ -20,6 +21,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Auto-login check
+        LocalDataManager dataManager = LocalDataManager.getInstance(this);
+        if (dataManager.isLoggedIn()) {
+            startActivity(new Intent(this, DashboardActivity.class));
+            finish();
+            return;
+        }
+
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         
@@ -28,6 +38,11 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        // Check for logout message
+        if (getIntent().getBooleanExtra("logout_message", false)) {
+            Toast.makeText(this, R.string.logged_out_success, Toast.LENGTH_SHORT).show();
+        }
 
         // Initialize Views
         etEmail = findViewById(R.id.etEmail);
@@ -51,8 +66,16 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            // Perform Login Logic Here
-            Toast.makeText(MainActivity.this, "Logging in " + email, Toast.LENGTH_SHORT).show();
+            if (dataManager.login(email, password)) {
+                Toast.makeText(MainActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
+                
+                // Navigate to Dashboard
+                Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
+                startActivity(intent);
+                finish();
+            } else {
+                Toast.makeText(MainActivity.this, "Invalid Email or Password", Toast.LENGTH_SHORT).show();
+            }
         });
 
         // Forgot Password Listener

@@ -2,7 +2,17 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="primary_green">#00402E</color>
-    <color name="light_bg">#FAFCED</color>
+
+    <!-- AgriFlow Theme Colors (Requested) -->
+    <color name="primary_dark_green">#0B4F3A</color>
+    <color name="bg_light_cream">#F8F9D7</color>
+    <color name="accent_green">#4CAF50</color>
+    <color name="warning_orange">#FF9800</color>
+    <color name="critical_red">#F44336</color>
+    <color name="text_grey">#757575</color>
+
+    <!-- Compatibility with existing files -->
+    <color name="primary_green">#0B4F3A</color>
+    <color name="light_bg">#F8F9D7</color>
     <color name="accent_yellow">#D4E157</color>
 </resources>

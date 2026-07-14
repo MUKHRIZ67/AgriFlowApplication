@@ -11,4 +11,7 @@
     <string name="login_btn">Login</string>
     <string name="dont_have_account">Don\'t have account ? </string>
     <string name="register_now">Register Now</string>
+    <string name="logout">Logout</string>
+    <string name="logout_confirmation">Are you sure you want to log out?</string>
+    <string name="logged_out_success">Logged out successfully</string>
 </resources>
