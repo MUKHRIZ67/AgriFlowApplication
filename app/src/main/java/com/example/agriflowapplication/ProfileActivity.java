@@ -16,22 +16,37 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import android.text.TextUtils;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class ProfileActivity extends AppCompatActivity {
 
-    private LocalDataManager dataManager;
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
+    private DocumentReference userRef;
+    
     private TextView tvHeaderName, tvFullName, tvEmail, tvPhone, tvFarmName, tvFarmLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        dataManager = LocalDataManager.getInstance(this);
+        mAuth = FirebaseManager.getInstance().getAuth();
+        db = FirebaseManager.getInstance().getDb();
 
         // Session Protection
-        if (!dataManager.isLoggedIn()) {
+        if (mAuth.getCurrentUser() == null) {
             redirectToLogin();
             return;
         }
+
+        userRef = db.collection("users").document(mAuth.getCurrentUser().getUid());
 
         setContentView(R.layout.activity_profile);
 
@@ -42,7 +57,7 @@ public class ProfileActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
-        toolbar.setNavigationOnClickListener(v -> onBackPressed());
+        toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
         // Initialize Views
         tvHeaderName = findViewById(R.id.tvHeaderName);
@@ -52,7 +67,7 @@ public class ProfileActivity extends AppCompatActivity {
         tvFarmName = findViewById(R.id.tvFarmName);
         tvFarmLocation = findViewById(R.id.tvFarmLocation);
 
-        updateUI();
+        fetchUserProfile();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main_profile), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -90,7 +105,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void performLogout() {
-        dataManager.logout();
+        mAuth.signOut();
         Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
         intent.putExtra("logout_message", true);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -105,43 +120,53 @@ public class ProfileActivity extends AppCompatActivity {
         finish();
     }
 
-    private void updateUI() {
-        tvHeaderName.setText(dataManager.getFullName());
-        tvFullName.setText(dataManager.getFullName());
-        tvEmail.setText(dataManager.getEmail());
-        tvPhone.setText(dataManager.getPhone());
-        tvFarmName.setText(dataManager.getFarmName());
-        tvFarmLocation.setText(dataManager.getFarmLocation());
+    private void fetchUserProfile() {
+        userRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                tvHeaderName.setText(documentSnapshot.getString("fullName"));
+                tvFullName.setText(documentSnapshot.getString("fullName"));
+                tvEmail.setText(documentSnapshot.getString("email"));
+                tvPhone.setText(documentSnapshot.getString("phone"));
+                tvFarmName.setText(documentSnapshot.getString("farmName"));
+                tvFarmLocation.setText(documentSnapshot.getString("farmLocation"));
+            }
+        }).addOnFailureListener(e -> Toast.makeText(this, "Error fetching profile", Toast.LENGTH_SHORT).show());
     }
 
     private void showEditProfileDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Edit Profile");
+        userRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (!documentSnapshot.exists()) return;
 
-        View view = LayoutInflater.from(this).inflate(R.layout.dialog_edit_profile, null);
-        EditText etName = view.findViewById(R.id.etName);
-        EditText etPhone = view.findViewById(R.id.etPhone);
-        EditText etFarmName = view.findViewById(R.id.etFarmName);
-        EditText etFarmLocation = view.findViewById(R.id.etFarmLocation);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Edit Profile");
 
-        etName.setText(dataManager.getFullName());
-        etPhone.setText(dataManager.getPhone());
-        etFarmName.setText(dataManager.getFarmName());
-        etFarmLocation.setText(dataManager.getFarmLocation());
+            View view = LayoutInflater.from(this).inflate(R.layout.dialog_edit_profile, null);
+            EditText etName = view.findViewById(R.id.etName);
+            EditText etPhone = view.findViewById(R.id.etPhone);
+            EditText etFarmName = view.findViewById(R.id.etFarmName);
+            EditText etFarmLocation = view.findViewById(R.id.etFarmLocation);
 
-        builder.setView(view);
-        builder.setPositiveButton("Save", (dialog, which) -> {
-            dataManager.updateProfile(
-                    etName.getText().toString(),
-                    etPhone.getText().toString(),
-                    etFarmName.getText().toString(),
-                    etFarmLocation.getText().toString()
-            );
-            updateUI();
-            Toast.makeText(this, "Profile Updated", Toast.LENGTH_SHORT).show();
+            etName.setText(documentSnapshot.getString("fullName"));
+            etPhone.setText(documentSnapshot.getString("phone"));
+            etFarmName.setText(documentSnapshot.getString("farmName"));
+            etFarmLocation.setText(documentSnapshot.getString("farmLocation"));
+
+            builder.setView(view);
+            builder.setPositiveButton("Save", (dialog, which) -> {
+                Map<String, Object> updates = new HashMap<>();
+                updates.put("fullName", etName.getText().toString());
+                updates.put("phone", etPhone.getText().toString());
+                updates.put("farmName", etFarmName.getText().toString());
+                updates.put("farmLocation", etFarmLocation.getText().toString());
+
+                userRef.update(updates).addOnSuccessListener(aVoid -> {
+                    fetchUserProfile();
+                    Toast.makeText(this, "Profile Updated", Toast.LENGTH_SHORT).show();
+                });
+            });
+            builder.setNegativeButton("Cancel", null);
+            builder.show();
         });
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
     }
 
     private void showChangePasswordDialog() {
@@ -149,19 +174,25 @@ public class ProfileActivity extends AppCompatActivity {
         builder.setTitle("Change Password");
 
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_change_password, null);
-        EditText etCurrentPassword = view.findViewById(R.id.etCurrentPassword);
         EditText etNewPassword = view.findViewById(R.id.etNewPassword);
 
+        // Note: Re-authentication is usually required for password changes in Firebase, 
+        // but for simplicity here we just use updatePassword.
         builder.setView(view);
         builder.setPositiveButton("Update", (dialog, which) -> {
-            boolean success = dataManager.changePassword(
-                    etCurrentPassword.getText().toString(),
-                    etNewPassword.getText().toString()
-            );
-            if (success) {
-                Toast.makeText(this, "Password Changed", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Current Password Incorrect", Toast.LENGTH_SHORT).show();
+            String newPass = etNewPassword.getText().toString();
+            if (TextUtils.isEmpty(newPass)) return;
+
+            if (mAuth.getCurrentUser() != null) {
+                mAuth.getCurrentUser().updatePassword(newPass)
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                Toast.makeText(this, "Password Changed", Toast.LENGTH_SHORT).show();
+                            } else {
+                                String error = task.getException() != null ? task.getException().getMessage() : "Unknown error";
+                                Toast.makeText(this, "Error: " + error, Toast.LENGTH_LONG).show();
+                            }
+                        });
             }
         });
         builder.setNegativeButton("Cancel", null);

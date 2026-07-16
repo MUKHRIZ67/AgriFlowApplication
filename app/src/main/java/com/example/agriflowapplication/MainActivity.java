@@ -14,17 +14,21 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+
 public class MainActivity extends AppCompatActivity {
 
     private EditText etEmail, etPassword;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Auto-login check
-        LocalDataManager dataManager = LocalDataManager.getInstance(this);
-        if (dataManager.isLoggedIn()) {
+        mAuth = FirebaseManager.getInstance().getAuth();
+
+        // Auto-login check using Firebase
+        if (mAuth.getCurrentUser() != null) {
             startActivity(new Intent(this, DashboardActivity.class));
             finish();
             return;
@@ -66,22 +70,30 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            if (dataManager.login(email, password)) {
-                Toast.makeText(MainActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
-                
-                // Navigate to Dashboard
-                Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
-                startActivity(intent);
-                finish();
-            } else {
-                Toast.makeText(MainActivity.this, "Invalid Email or Password", Toast.LENGTH_SHORT).show();
-            }
+            mAuth.signInWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(this, task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(MainActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            String error = task.getException() != null ? task.getException().getMessage() : "Unknown error";
+                            Toast.makeText(MainActivity.this, "Authentication Failed: " + error, Toast.LENGTH_LONG).show();
+                        }
+                    });
         });
 
         // Forgot Password Listener
-        btnForgotPassword.setOnClickListener(v -> Toast.makeText(MainActivity.this, "Forgot Password Clicked", Toast.LENGTH_SHORT).show());
+        btnForgotPassword.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ForgotPasswordActivity.class);
+            startActivity(intent);
+        });
 
         // Register Button Listener
-        btnRegister.setOnClickListener(v -> Toast.makeText(MainActivity.this, "Navigating to Register", Toast.LENGTH_SHORT).show());
+        btnRegister.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
+            startActivity(intent);
+        });
     }
 }
