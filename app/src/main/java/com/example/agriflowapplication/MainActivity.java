@@ -3,8 +3,10 @@ package com.example.agriflowapplication;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,23 +17,26 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class MainActivity extends AppCompatActivity {
 
     private EditText etEmail, etPassword;
     private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
+    // Note: If you want to show a loading state, add a ProgressBar to activity_main.xml 
+    // and initialize it here. For now, we'll use a simple Toast.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         mAuth = FirebaseManager.getInstance().getAuth();
+        db = FirebaseManager.getInstance().getDb();
 
         // Auto-login check using Firebase
         if (mAuth.getCurrentUser() != null) {
-            startActivity(new Intent(this, DashboardActivity.class));
-            finish();
-            return;
+            checkUserRole(mAuth.getCurrentUser().getUid());
         }
 
         EdgeToEdge.enable(this);
@@ -72,11 +77,8 @@ public class MainActivity extends AppCompatActivity {
 
             mAuth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this, task -> {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(MainActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
-                            Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
-                            startActivity(intent);
-                            finish();
+                        if (task.isSuccessful() && mAuth.getCurrentUser() != null) {
+                            checkUserRole(mAuth.getCurrentUser().getUid());
                         } else {
                             String error = task.getException() != null ? task.getException().getMessage() : "Unknown error";
                             Toast.makeText(MainActivity.this, "Authentication Failed: " + error, Toast.LENGTH_LONG).show();
@@ -95,5 +97,34 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
             startActivity(intent);
         });
+    }
+
+    private void checkUserRole(String uid) {
+        db.collection("users").document(uid).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String role = documentSnapshot.getString("role");
+                        
+                        if ("admin".equals(role)) {
+                            Toast.makeText(MainActivity.this, "Admin Login Successful!", Toast.LENGTH_SHORT).show();
+                            // If you have an AdminDashboardActivity, change the class below
+                            startActivity(new Intent(MainActivity.this, DashboardActivity.class));
+                        } else {
+                            Toast.makeText(MainActivity.this, "User Login Successful!", Toast.LENGTH_SHORT).show();
+                            startActivity(new Intent(MainActivity.this, DashboardActivity.class));
+                        }
+                        finish();
+                    } else {
+                        // If no document exists, assume standard user or handle error
+                        startActivity(new Intent(MainActivity.this, DashboardActivity.class));
+                        finish();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(MainActivity.this, "Error checking role: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Fallback to standard dashboard
+                    startActivity(new Intent(MainActivity.this, DashboardActivity.class));
+                    finish();
+                });
     }
 }

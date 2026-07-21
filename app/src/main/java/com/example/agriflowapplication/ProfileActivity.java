@@ -18,7 +18,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import android.text.TextUtils;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -31,7 +30,7 @@ public class ProfileActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private DocumentReference userRef;
     
-    private TextView tvHeaderName, tvFullName, tvEmail, tvPhone, tvFarmName, tvFarmLocation;
+    private TextView tvHeaderName, tvUserRole, tvFullName, tvEmail, tvPhone, tvFarmName, tvFarmLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +60,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Initialize Views
         tvHeaderName = findViewById(R.id.tvHeaderName);
+        tvUserRole = findViewById(R.id.tvUserRole);
         tvFullName = findViewById(R.id.tvFullName);
         tvEmail = findViewById(R.id.tvEmail);
         tvPhone = findViewById(R.id.tvPhone);
@@ -129,6 +129,14 @@ public class ProfileActivity extends AppCompatActivity {
                 tvPhone.setText(documentSnapshot.getString("phone"));
                 tvFarmName.setText(documentSnapshot.getString("farmName"));
                 tvFarmLocation.setText(documentSnapshot.getString("farmLocation"));
+
+                // Handle Role Badge
+                String role = documentSnapshot.getString("role");
+                if ("admin".equalsIgnoreCase(role)) {
+                    tvUserRole.setText("Admin");
+                } else {
+                    tvUserRole.setText("Farmer");
+                }
             }
         }).addOnFailureListener(e -> Toast.makeText(this, "Error fetching profile", Toast.LENGTH_SHORT).show());
     }
@@ -176,8 +184,6 @@ public class ProfileActivity extends AppCompatActivity {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_change_password, null);
         EditText etNewPassword = view.findViewById(R.id.etNewPassword);
 
-        // Note: Re-authentication is usually required for password changes in Firebase, 
-        // but for simplicity here we just use updatePassword.
         builder.setView(view);
         builder.setPositiveButton("Update", (dialog, which) -> {
             String newPass = etNewPassword.getText().toString();
