@@ -75,20 +75,6 @@ public class ProfileActivity extends AppCompatActivity {
             return insets;
         });
 
-        // Bottom Navigation
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_profile);
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) {
-                startActivity(new Intent(ProfileActivity.this, DashboardActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_profile) {
-                return true;
-            }
-            return false;
-        });
-
         // Button Click Listeners
         findViewById(R.id.btnEditProfile).setOnClickListener(v -> showEditProfileDialog());
         findViewById(R.id.btnChangePassword).setOnClickListener(v -> showChangePasswordDialog());
@@ -130,15 +116,61 @@ public class ProfileActivity extends AppCompatActivity {
                 tvFarmName.setText(documentSnapshot.getString("farmName"));
                 tvFarmLocation.setText(documentSnapshot.getString("farmLocation"));
 
-                // Handle Role Badge
+                // Handle Role and Navigation
                 String role = documentSnapshot.getString("role");
-                if ("admin".equalsIgnoreCase(role)) {
+                boolean isAdmin = "admin".equalsIgnoreCase(role);
+                
+                if (isAdmin) {
                     tvUserRole.setText("Admin");
+                    setupAdminNavigation();
                 } else {
                     tvUserRole.setText("Farmer");
+                    setupFarmerNavigation();
                 }
             }
         }).addOnFailureListener(e -> Toast.makeText(this, "Error fetching profile", Toast.LENGTH_SHORT).show());
+    }
+
+    private void setupAdminNavigation() {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.getMenu().clear();
+        bottomNavigationView.inflateMenu(R.menu.admin_bottom_nav_menu);
+        bottomNavigationView.setSelectedItemId(R.id.nav_profile);
+        
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(ProfileActivity.this, AdminDashboardActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_history) {
+                // Future implementation
+                return true;
+            } else if (itemId == R.id.nav_schedule) {
+                // Future implementation
+                return true;
+            } else if (itemId == R.id.nav_manage) {
+                startActivity(new Intent(ProfileActivity.this, FarmerListActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void setupFarmerNavigation() {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        // Default menu is already bottom_nav_menu, but we set listener
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(ProfileActivity.this, DashboardActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                return true;
+            }
+            return false;
+        });
     }
 
     private void showEditProfileDialog() {

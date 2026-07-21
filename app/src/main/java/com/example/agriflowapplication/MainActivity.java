@@ -105,10 +105,9 @@ public class MainActivity extends AppCompatActivity {
                     if (documentSnapshot.exists()) {
                         String role = documentSnapshot.getString("role");
                         
-                        if ("admin".equals(role)) {
+                        if ("admin".equalsIgnoreCase(role)) {
                             Toast.makeText(MainActivity.this, "Admin Login Successful!", Toast.LENGTH_SHORT).show();
-                            // If you have an AdminDashboardActivity, change the class below
-                            startActivity(new Intent(MainActivity.this, DashboardActivity.class));
+                            startActivity(new Intent(MainActivity.this, AdminDashboardActivity.class));
                         } else {
                             Toast.makeText(MainActivity.this, "User Login Successful!", Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(MainActivity.this, DashboardActivity.class));

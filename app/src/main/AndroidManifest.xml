@@ -32,6 +32,15 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".AdminDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".EditFarmerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".FarmerListActivity"
+            android:exported="false" />
+        <activity
             android:name=".ProfileActivity"
             android:exported="false" />
     </application>
