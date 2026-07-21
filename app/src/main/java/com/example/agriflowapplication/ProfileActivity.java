@@ -18,7 +18,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import android.text.TextUtils;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -31,7 +30,7 @@ public class ProfileActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private DocumentReference userRef;
     
-    private TextView tvHeaderName, tvFullName, tvEmail, tvPhone, tvFarmName, tvFarmLocation;
+    private TextView tvHeaderName, tvUserRole, tvFullName, tvEmail, tvPhone, tvFarmName, tvFarmLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +60,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Initialize Views
         tvHeaderName = findViewById(R.id.tvHeaderName);
+        tvUserRole = findViewById(R.id.tvUserRole);
         tvFullName = findViewById(R.id.tvFullName);
         tvEmail = findViewById(R.id.tvEmail);
         tvPhone = findViewById(R.id.tvPhone);
@@ -73,20 +73,6 @@ public class ProfileActivity extends AppCompatActivity {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
             return insets;
-        });
-
-        // Bottom Navigation
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_profile);
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) {
-                startActivity(new Intent(ProfileActivity.this, DashboardActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_profile) {
-                return true;
-            }
-            return false;
         });
 
         // Button Click Listeners
@@ -129,8 +115,62 @@ public class ProfileActivity extends AppCompatActivity {
                 tvPhone.setText(documentSnapshot.getString("phone"));
                 tvFarmName.setText(documentSnapshot.getString("farmName"));
                 tvFarmLocation.setText(documentSnapshot.getString("farmLocation"));
+
+                // Handle Role and Navigation
+                String role = documentSnapshot.getString("role");
+                boolean isAdmin = "admin".equalsIgnoreCase(role);
+                
+                if (isAdmin) {
+                    tvUserRole.setText("Admin");
+                    setupAdminNavigation();
+                } else {
+                    tvUserRole.setText("Farmer");
+                    setupFarmerNavigation();
+                }
             }
         }).addOnFailureListener(e -> Toast.makeText(this, "Error fetching profile", Toast.LENGTH_SHORT).show());
+    }
+
+    private void setupAdminNavigation() {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.getMenu().clear();
+        bottomNavigationView.inflateMenu(R.menu.admin_bottom_nav_menu);
+        bottomNavigationView.setSelectedItemId(R.id.nav_profile);
+        
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(ProfileActivity.this, AdminDashboardActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_history) {
+                // Future implementation
+                return true;
+            } else if (itemId == R.id.nav_schedule) {
+                // Future implementation
+                return true;
+            } else if (itemId == R.id.nav_manage) {
+                startActivity(new Intent(ProfileActivity.this, FarmerListActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void setupFarmerNavigation() {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        // Default menu is already bottom_nav_menu, but we set listener
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(ProfileActivity.this, DashboardActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                return true;
+            }
+            return false;
+        });
     }
 
     private void showEditProfileDialog() {
@@ -176,8 +216,6 @@ public class ProfileActivity extends AppCompatActivity {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_change_password, null);
         EditText etNewPassword = view.findViewById(R.id.etNewPassword);
 
-        // Note: Re-authentication is usually required for password changes in Firebase, 
-        // but for simplicity here we just use updatePassword.
         builder.setView(view);
         builder.setPositiveButton("Update", (dialog, which) -> {
             String newPass = etNewPassword.getText().toString();

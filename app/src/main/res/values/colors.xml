@@ -15,4 +15,5 @@
     <color name="primary_green">#0B4F3A</color>
     <color name="light_bg">#F8F9D7</color>
     <color name="accent_yellow">#D4E157</color>
+    <color name="ic_launcher_background">#F8F9D7</color>
 </resources>

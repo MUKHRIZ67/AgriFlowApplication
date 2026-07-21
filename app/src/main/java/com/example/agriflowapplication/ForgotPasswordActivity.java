@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,6 +15,8 @@ import com.google.firebase.auth.FirebaseAuth;
 public class ForgotPasswordActivity extends AppCompatActivity {
 
     private EditText etResetEmail;
+    private ProgressBar progressBar;
+    private Button btnSendResetLink;
     private FirebaseAuth mAuth;
 
     @Override
@@ -24,7 +27,8 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         mAuth = FirebaseManager.getInstance().getAuth();
 
         etResetEmail = findViewById(R.id.etResetEmail);
-        Button btnSendResetLink = findViewById(R.id.btnSendResetLink);
+        progressBar = findViewById(R.id.progressBar);
+        btnSendResetLink = findViewById(R.id.btnSendResetLink);
         TextView btnBackToLogin = findViewById(R.id.btnBackToLogin);
 
         btnSendResetLink.setOnClickListener(v -> sendResetEmail());
@@ -40,8 +44,16 @@ public class ForgotPasswordActivity extends AppCompatActivity {
             return;
         }
 
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            etResetEmail.setError("Please enter a valid email");
+            return;
+        }
+
+        showLoading(true);
+
         mAuth.sendPasswordResetEmail(email)
                 .addOnCompleteListener(task -> {
+                    showLoading(false);
                     if (task.isSuccessful()) {
                         Toast.makeText(ForgotPasswordActivity.this, R.string.email_sent_success, Toast.LENGTH_LONG).show();
                         finish();
@@ -50,5 +62,11 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                         Toast.makeText(ForgotPasswordActivity.this, "Error: " + error, Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    private void showLoading(boolean isLoading) {
+        progressBar.setVisibility(isLoading ? android.view.View.VISIBLE : android.view.View.GONE);
+        btnSendResetLink.setEnabled(!isLoading);
+        btnSendResetLink.setText(isLoading ? "" : getString(R.string.send_reset_link));
     }
 }

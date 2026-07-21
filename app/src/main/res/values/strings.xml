@@ -31,4 +31,7 @@
     <string name="logout">Logout</string>
     <string name="logout_confirmation">Are you sure you want to log out?</string>
     <string name="logged_out_success">Logged out successfully</string>
+    <string name="edit_farmer">Edit Farmer</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="farmer_updated_success">Farmer Information Updated Successfully!</string>
 </resources>
