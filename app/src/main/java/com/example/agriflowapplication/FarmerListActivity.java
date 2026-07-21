@@ -21,7 +21,6 @@ import java.util.Map;
 
 public class FarmerListActivity extends AppCompatActivity {
 
-    private RecyclerView rvFarmers;
     private FarmerAdapter adapter;
     private List<Map<String, Object>> farmerList;
     private List<String> farmerIds;
@@ -43,7 +42,7 @@ public class FarmerListActivity extends AppCompatActivity {
         }
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        rvFarmers = findViewById(R.id.rvFarmers);
+        RecyclerView rvFarmers = findViewById(R.id.rvFarmers);
         progressBar = findViewById(R.id.progressBar);
 
         rvFarmers.setLayoutManager(new LinearLayoutManager(this));
@@ -51,6 +50,8 @@ public class FarmerListActivity extends AppCompatActivity {
         farmerIds = new ArrayList<>();
         adapter = new FarmerAdapter(this, farmerList, farmerIds);
         rvFarmers.setAdapter(adapter);
+
+        findViewById(R.id.fabAddFarmer).setOnClickListener(v -> startActivity(new Intent(FarmerListActivity.this, AddFarmerActivity.class)));
 
         setupBottomNavigation();
         loadFarmers();

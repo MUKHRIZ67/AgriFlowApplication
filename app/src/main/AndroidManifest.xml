@@ -41,7 +41,13 @@
             android:name=".FarmerListActivity"
             android:exported="false" />
         <activity
+            android:name=".AddFarmerActivity"
+            android:exported="false" />
+        <activity
             android:name=".ProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ChangePasswordActivity"
             android:exported="false" />
     </application>
 

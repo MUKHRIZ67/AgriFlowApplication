@@ -20,19 +20,26 @@
         android:hint="Phone Number"
         android:inputType="phone" />
 
-    <EditText
-        android:id="@+id/etFarmName"
+    <LinearLayout
+        android:id="@+id/farmFields"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:hint="Farm Name"
-        android:inputType="text" />
+        android:orientation="vertical">
 
-    <EditText
-        android:id="@+id/etFarmLocation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:hint="Farm Location"
-        android:inputType="text" />
+        <EditText
+            android:id="@+id/etFarmName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="Farm Name"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/etFarmLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="Farm Location"
+            android:inputType="text" />
+    </LinearLayout>
 </LinearLayout>
