@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "177503553022",
+    "firebase_url": "https://agriflow-1628e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "agriflow-1628e",
+    "storage_bucket": "agriflow-1628e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:177503553022:android:fa47c95cc9fe451a8e6caf",
+        "android_client_info": {
+          "package_name": "com.example.agriflowapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDY845YkT1G5Ivc3IpdaoGPT_FzeJdTIcg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
