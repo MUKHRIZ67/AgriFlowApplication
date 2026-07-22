@@ -34,11 +34,11 @@
     <string name="edit_farmer">Edit Farmer</string>
     <string name="save_changes">Save Changes</string>
     <string name="farmer_updated_success">Farmer Information Updated Successfully!</string>
-    <string name="add_farmer">Add Farmer</string>
-    <string name="create_account">Create Account</string>
-    <string name="delete">Delete</string>
     <string name="delete_farmer">Delete Farmer</string>
     <string name="delete_farmer_confirmation">Are you sure you want to delete this farmer?</string>
-    <string name="farmer_deleted_success">Farmer deleted successfully</string>
+    <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
+    <string name="farmer_deleted_success">Farmer deleted successfully</string>
+    <string name="create_account">Create Account</string>
+    <string name="add_farmer">Add Farmer</string>
 </resources>

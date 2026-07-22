@@ -24,7 +24,6 @@ public class EditFarmerActivity extends AppCompatActivity {
     private Button btnSave, btnDeleteFarmer;
     private ProgressBar progressBar;
     private FirebaseFirestore db;
-    private String farmerId;
     private DocumentReference farmerRef;
 
     @Override
@@ -33,7 +32,7 @@ public class EditFarmerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_edit_farmer);
 
         db = FirebaseManager.getInstance().getDb();
-        farmerId = getIntent().getStringExtra("farmerId");
+        String farmerId = getIntent().getStringExtra("farmerId");
 
         if (farmerId == null) {
             Toast.makeText(this, "Error: No Farmer ID provided", Toast.LENGTH_SHORT).show();
