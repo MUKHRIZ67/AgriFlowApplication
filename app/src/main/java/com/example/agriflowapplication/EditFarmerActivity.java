@@ -7,6 +7,7 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
@@ -20,7 +21,7 @@ import java.util.Map;
 public class EditFarmerActivity extends AppCompatActivity {
 
     private TextInputEditText etFullName, etPhone, etFarmName, etFarmLocation;
-    private Button btnSave;
+    private Button btnSave, btnDeleteFarmer;
     private ProgressBar progressBar;
     private FirebaseFirestore db;
     private String farmerId;
@@ -56,11 +57,36 @@ public class EditFarmerActivity extends AppCompatActivity {
         etFarmName = findViewById(R.id.etFarmName);
         etFarmLocation = findViewById(R.id.etFarmLocation);
         btnSave = findViewById(R.id.btnSave);
+        btnDeleteFarmer = findViewById(R.id.btnDeleteFarmer);
         progressBar = findViewById(R.id.progressBar);
 
         loadFarmerData();
 
         btnSave.setOnClickListener(v -> updateFarmerData());
+        btnDeleteFarmer.setOnClickListener(v -> showDeleteConfirmation());
+    }
+
+    private void showDeleteConfirmation() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.delete_farmer)
+                .setMessage(R.string.delete_farmer_confirmation)
+                .setPositiveButton(R.string.delete, (dialog, which) -> deleteFarmer())
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void deleteFarmer() {
+        showLoading(true);
+        farmerRef.delete()
+                .addOnSuccessListener(aVoid -> {
+                    showLoading(false);
+                    Toast.makeText(this, R.string.farmer_deleted_success, Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Error deleting farmer: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void loadFarmerData() {

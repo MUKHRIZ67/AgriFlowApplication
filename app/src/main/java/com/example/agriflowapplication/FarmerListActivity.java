@@ -1,13 +1,21 @@
 package com.example.agriflowapplication;
 
 import android.content.Intent;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -51,6 +59,8 @@ public class FarmerListActivity extends AppCompatActivity {
         adapter = new FarmerAdapter(this, farmerList, farmerIds);
         rvFarmers.setAdapter(adapter);
 
+        setupSwipeToDelete(rvFarmers);
+
         findViewById(R.id.fabAddFarmer).setOnClickListener(v -> startActivity(new Intent(FarmerListActivity.this, AddFarmerActivity.class)));
 
         setupBottomNavigation();
@@ -74,6 +84,52 @@ public class FarmerListActivity extends AppCompatActivity {
             }
             return false;
         });
+    }
+
+    private void setupSwipeToDelete(RecyclerView recyclerView) {
+        ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            private final ColorDrawable background = new ColorDrawable(Color.RED);
+            private final Drawable icon = ContextCompat.getDrawable(FarmerListActivity.this, R.drawable.ic_delete);
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getAdapterPosition();
+                new AlertDialog.Builder(FarmerListActivity.this)
+                        .setTitle(R.string.delete_farmer)
+                        .setMessage(R.string.delete_farmer_confirmation)
+                        .setPositiveButton(R.string.delete, (dialog, which) -> adapter.deleteFarmer(position))
+                        .setNegativeButton(R.string.cancel, (dialog, which) -> adapter.notifyItemChanged(position))
+                        .setOnCancelListener(dialog -> adapter.notifyItemChanged(position))
+                        .show();
+            }
+
+            @Override
+            public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+                View itemView = viewHolder.itemView;
+
+                if (dX < 0) { // Swiping to the left
+                    background.setBounds(itemView.getRight() + (int) dX, itemView.getTop(), itemView.getRight(), itemView.getBottom());
+                    background.draw(c);
+
+                    if (icon != null) {
+                        int iconMargin = (itemView.getHeight() - icon.getIntrinsicHeight()) / 2;
+                        int iconTop = itemView.getTop() + iconMargin;
+                        int iconBottom = iconTop + icon.getIntrinsicHeight();
+                        int iconLeft = itemView.getRight() - iconMargin - icon.getIntrinsicWidth();
+                        int iconRight = itemView.getRight() - iconMargin;
+                        icon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
+                        icon.draw(c);
+                    }
+                }
+            }
+        };
+        new ItemTouchHelper(callback).attachToRecyclerView(recyclerView);
     }
 
     private void loadFarmers() {

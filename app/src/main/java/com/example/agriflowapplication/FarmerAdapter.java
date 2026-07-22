@@ -7,9 +7,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.List;
 import java.util.Map;
@@ -19,11 +23,13 @@ public class FarmerAdapter extends RecyclerView.Adapter<FarmerAdapter.FarmerView
     private List<Map<String, Object>> farmerList;
     private List<String> farmerIds;
     private Context context;
+    private FirebaseFirestore db;
 
     public FarmerAdapter(Context context, List<Map<String, Object>> farmerList, List<String> farmerIds) {
         this.context = context;
         this.farmerList = farmerList;
         this.farmerIds = farmerIds;
+        this.db = FirebaseManager.getInstance().getDb();
     }
 
     @NonNull
@@ -46,6 +52,22 @@ public class FarmerAdapter extends RecyclerView.Adapter<FarmerAdapter.FarmerView
             intent.putExtra("farmerId", farmerId);
             context.startActivity(intent);
         });
+    }
+
+    public void deleteFarmer(int position) {
+        String farmerId = farmerIds.get(position);
+        db.collection("users").document(farmerId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    farmerList.remove(position);
+                    farmerIds.remove(position);
+                    notifyItemRemoved(position);
+                    Toast.makeText(context, R.string.farmer_deleted_success, Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    notifyItemChanged(position);
+                    Toast.makeText(context, "Error deleting farmer: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     @Override
