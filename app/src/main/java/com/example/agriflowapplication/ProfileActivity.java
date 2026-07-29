@@ -79,10 +79,49 @@ public class ProfileActivity extends AppCompatActivity {
             return insets;
         });
 
+        // Initialize Navigation immediately
+        setupInitialNavigation();
+
         // Button Click Listeners
         findViewById(R.id.btnEditProfile).setOnClickListener(v -> showEditProfileDialog());
         findViewById(R.id.btnChangePassword).setOnClickListener(v -> showChangePasswordDialog());
         findViewById(R.id.btnLogout).setOnClickListener(v -> showLogoutConfirmation());
+    }
+
+    private void setupInitialNavigation() {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setSelectedItemId(R.id.nav_profile);
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                // Determine if we should go to Admin or Farmer dashboard
+                userRef.get().addOnSuccessListener(documentSnapshot -> {
+                    Intent intent;
+                    if (documentSnapshot.exists() && "admin".equalsIgnoreCase(documentSnapshot.getString("role"))) {
+                        intent = new Intent(ProfileActivity.this, AdminDashboardActivity.class);
+                    } else {
+                        intent = new Intent(ProfileActivity.this, DashboardActivity.class);
+                    }
+                    startActivity(intent);
+                    finish();
+                }).addOnFailureListener(e -> {
+                    // Fallback
+                    startActivity(new Intent(ProfileActivity.this, DashboardActivity.class));
+                    finish();
+                });
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                return true;
+            } else if (itemId == R.id.nav_manage) {
+                startActivity(new Intent(ProfileActivity.this, FarmerListActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_history || itemId == R.id.nav_schedule) {
+                Toast.makeText(this, "Coming Soon!", Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            return false;
+        });
     }
 
     private void showLogoutConfirmation() {
@@ -136,63 +175,41 @@ public class ProfileActivity extends AppCompatActivity {
         
         boolean isAdmin = "admin".equalsIgnoreCase(profile.getRole());
         
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         if (isAdmin) {
             tvUserRole.setText("Admin");
             tvUserRole.setBackgroundTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.warning_orange)));
             farmContainer1.setVisibility(View.GONE);
             farmContainer2.setVisibility(View.GONE);
-            setupAdminNavigation();
+            
+            bottomNavigationView.getMenu().clear();
+            bottomNavigationView.inflateMenu(R.menu.admin_bottom_nav_menu);
         } else {
             tvUserRole.setText("Farmer");
             tvFarmName.setText(profile.getFarmName());
             tvFarmLocation.setText(profile.getFarmLocation());
             farmContainer1.setVisibility(View.VISIBLE);
             farmContainer2.setVisibility(View.VISIBLE);
-            setupFarmerNavigation();
+            
+            bottomNavigationView.getMenu().clear();
+            bottomNavigationView.inflateMenu(R.menu.bottom_nav_menu);
         }
-    }
-
-    private void setupAdminNavigation() {
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.getMenu().clear();
-        bottomNavigationView.inflateMenu(R.menu.admin_bottom_nav_menu);
         bottomNavigationView.setSelectedItemId(R.id.nav_profile);
-        
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) {
-                startActivity(new Intent(ProfileActivity.this, AdminDashboardActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_manage) {
-                startActivity(new Intent(ProfileActivity.this, FarmerListActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_profile) {
-                return true;
-            }
-            return false;
-        });
-    }
-
-    private void setupFarmerNavigation() {
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_profile);
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) {
-                startActivity(new Intent(ProfileActivity.this, DashboardActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_profile) {
-                return true;
-            }
-            return false;
-        });
     }
 
     private void showEditProfileDialog() {
+        progressBar.setVisibility(View.VISIBLE);
         userRef.get().addOnSuccessListener(documentSnapshot -> {
-            if (!documentSnapshot.exists()) return;
+            progressBar.setVisibility(View.GONE);
+            if (!documentSnapshot.exists()) {
+                Toast.makeText(this, "User data not found", Toast.LENGTH_SHORT).show();
+                return;
+            }
             UserProfile profile = documentSnapshot.toObject(UserProfile.class);
-            if (profile == null) return;
+            if (profile == null) {
+                Toast.makeText(this, "Error parsing user data", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Edit Profile");
@@ -202,7 +219,7 @@ public class ProfileActivity extends AppCompatActivity {
             EditText etPhone = view.findViewById(R.id.etPhone);
             EditText etFarmName = view.findViewById(R.id.etFarmName);
             EditText etFarmLocation = view.findViewById(R.id.etFarmLocation);
-            View farmFields = view.findViewById(R.id.farmFields); // Assumes we have this ID in dialog_edit_profile
+            View farmFields = view.findViewById(R.id.farmFields);
 
             etName.setText(profile.getFullName());
             etPhone.setText(profile.getPhone());
@@ -217,12 +234,20 @@ public class ProfileActivity extends AppCompatActivity {
             builder.setView(view);
             builder.setPositiveButton("Save", (dialog, which) -> {
                 Map<String, Object> updates = new HashMap<>();
-                updates.put("fullName", etName.getText().toString());
-                updates.put("phone", etPhone.getText().toString());
+                String newName = etName.getText().toString().trim();
+                String newPhone = etPhone.getText().toString().trim();
+
+                if (newName.isEmpty()) {
+                    Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                updates.put("fullName", newName);
+                updates.put("phone", newPhone);
                 
                 if (!"admin".equalsIgnoreCase(profile.getRole())) {
-                    updates.put("farmName", etFarmName.getText().toString());
-                    updates.put("farmLocation", etFarmLocation.getText().toString());
+                    updates.put("farmName", etFarmName.getText().toString().trim());
+                    updates.put("farmLocation", etFarmLocation.getText().toString().trim());
                 }
 
                 progressBar.setVisibility(View.VISIBLE);
@@ -231,11 +256,14 @@ public class ProfileActivity extends AppCompatActivity {
                     Toast.makeText(this, "Profile Updated", Toast.LENGTH_SHORT).show();
                 }).addOnFailureListener(e -> {
                     progressBar.setVisibility(View.GONE);
-                    Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
             });
             builder.setNegativeButton("Cancel", null);
             builder.show();
+        }).addOnFailureListener(e -> {
+            progressBar.setVisibility(View.GONE);
+            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         });
     }
 

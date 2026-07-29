@@ -19,9 +19,9 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@android:drawable/ic_menu_revert"
-            app:navigationIconTint="@color/primary_dark_green"
+            app:navigationIconTint="@color/on_surface"
             app:title="Profile"
-            app:titleTextColor="@color/primary_dark_green" />
+            app:titleTextColor="@color/on_surface" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <ProgressBar
@@ -57,8 +57,8 @@
                     android:id="@+id/tvHeaderName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Denice Kang"
-                    android:textColor="@color/primary_dark_green"
+                    android:text="User Name"
+                    android:textColor="@color/on_surface"
                     android:textSize="22sp"
                     android:textStyle="bold" />
 
@@ -66,22 +66,34 @@
                     android:id="@+id/tvUserRole"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="6dp"
                     android:background="@drawable/rounded_top_bg"
                     android:backgroundTint="@color/primary_dark_green"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="4dp"
                     android:text="Farmer"
                     android:textColor="@color/white"
-                    android:textSize="12sp" />
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
             </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="PERSONAL INFORMATION"
+                android:textColor="@color/on_surface_variant"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
 
             <!-- Personal Information Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="2dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface_container"
                 android:layout_marginBottom="24dp">
 
                 <LinearLayout
@@ -97,11 +109,10 @@
                         android:gravity="center_vertical"
                         android:layout_marginBottom="16dp">
                         <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
                             android:src="@android:drawable/ic_menu_myplaces"
-                            app:tint="@color/primary_dark_green"
-                            android:contentDescription="Name Icon" />
+                            app:tint="@color/on_surface_variant" />
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -111,15 +122,16 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Full Name"
-                                android:textColor="@color/text_grey"
+                                android:textColor="@color/on_surface_variant"
                                 android:textSize="12sp" />
                             <TextView
                                 android:id="@+id/tvFullName"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Denice Kang"
-                                android:textColor="@color/black"
-                                android:textSize="16sp" />
+                                android:textColor="@color/on_surface"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -130,11 +142,10 @@
                         android:gravity="center_vertical"
                         android:layout_marginBottom="16dp">
                         <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
                             android:src="@android:drawable/ic_dialog_email"
-                            app:tint="@color/primary_dark_green"
-                            android:contentDescription="Email Icon" />
+                            app:tint="@color/on_surface_variant" />
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -144,15 +155,16 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Email Address"
-                                android:textColor="@color/text_grey"
+                                android:textColor="@color/on_surface_variant"
                                 android:textSize="12sp" />
                             <TextView
                                 android:id="@+id/tvEmail"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="denice67@gmail.com"
-                                android:textColor="@color/black"
-                                android:textSize="16sp" />
+                                android:textColor="@color/on_surface"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -163,11 +175,10 @@
                         android:gravity="center_vertical"
                         android:layout_marginBottom="16dp">
                         <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
                             android:src="@android:drawable/ic_menu_call"
-                            app:tint="@color/primary_dark_green"
-                            android:contentDescription="Phone Icon" />
+                            app:tint="@color/on_surface_variant" />
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -177,15 +188,16 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Phone Number"
-                                android:textColor="@color/text_grey"
+                                android:textColor="@color/on_surface_variant"
                                 android:textSize="12sp" />
                             <TextView
                                 android:id="@+id/tvPhone"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="012-3456789"
-                                android:textColor="@color/black"
-                                android:textSize="16sp" />
+                                android:text="+60 12-345 6789"
+                                android:textColor="@color/on_surface"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -197,11 +209,10 @@
                         android:gravity="center_vertical"
                         android:layout_marginBottom="16dp">
                         <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
                             android:src="@android:drawable/ic_menu_gallery"
-                            app:tint="@color/primary_dark_green"
-                            android:contentDescription="Farm Icon" />
+                            app:tint="@color/on_surface_variant" />
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -211,15 +222,16 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Farm Name"
-                                android:textColor="@color/text_grey"
+                                android:textColor="@color/on_surface_variant"
                                 android:textSize="12sp" />
                             <TextView
                                 android:id="@+id/tvFarmName"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Green Valley Farm"
-                                android:textColor="@color/black"
-                                android:textSize="16sp" />
+                                android:textColor="@color/on_surface"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -230,11 +242,10 @@
                         android:orientation="horizontal"
                         android:gravity="center_vertical">
                         <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
                             android:src="@android:drawable/ic_menu_mapmode"
-                            app:tint="@color/primary_dark_green"
-                            android:contentDescription="Location Icon" />
+                            app:tint="@color/on_surface_variant" />
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -244,21 +255,31 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Farm Location"
-                                android:textColor="@color/text_grey"
+                                android:textColor="@color/on_surface_variant"
                                 android:textSize="12sp" />
                             <TextView
                                 android:id="@+id/tvFarmLocation"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Shah Alam, Selangor"
-                                android:textColor="@color/black"
-                                android:textSize="16sp" />
+                                android:textColor="@color/on_surface"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Account Actions -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="ACCOUNT ACTIONS"
+                android:textColor="@color/on_surface_variant"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
+
             <Button
                 android:id="@+id/btnEditProfile"
                 android:layout_width="match_parent"
@@ -268,99 +289,39 @@
                 android:text="Edit Profile"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
-                app:cornerRadius="28dp"
+                app:cornerRadius="16dp"
                 app:icon="@android:drawable/ic_menu_edit"
                 app:iconGravity="textStart" />
 
             <Button
                 android:id="@+id/btnChangePassword"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginBottom="12dp"
                 android:text="Change Password"
                 android:textAllCaps="false"
-                android:textColor="@color/primary_dark_green"
-                app:cornerRadius="28dp"
+                android:textColor="@color/on_surface"
+                android:backgroundTint="@color/surface_container_high"
+                app:cornerRadius="16dp"
                 app:icon="@android:drawable/ic_lock_lock"
                 app:iconGravity="textStart"
-                app:iconTint="@color/primary_dark_green"
-                app:strokeColor="@color/primary_dark_green" />
+                app:iconTint="@color/on_surface" />
 
             <Button
                 android:id="@+id/btnLogout"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginBottom="24dp"
                 android:text="@string/logout"
                 android:textAllCaps="false"
                 android:textColor="@color/critical_red"
-                app:cornerRadius="28dp"
+                android:backgroundTint="@color/error_container"
+                app:cornerRadius="16dp"
                 app:icon="@android:drawable/ic_lock_power_off"
                 app:iconGravity="textStart"
-                app:iconTint="@color/critical_red"
-                app:strokeColor="@color/critical_red" />
-
-            <!-- System Information Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="2dp">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="AgriFlow Version: 1.0"
-                        android:textColor="@color/text_grey"
-                        android:textSize="12sp" />
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="8dp">
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="ESP32 Status"
-                            android:textColor="@color/text_grey"
-                            android:textSize="12sp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Connected"
-                            android:textColor="@color/accent_green"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="4dp">
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Firebase Status"
-                            android:textColor="@color/text_grey"
-                            android:textSize="12sp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Synced"
-                            android:textColor="@color/accent_green"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                app:iconTint="@color/critical_red" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
@@ -370,9 +331,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/white"
-        app:itemIconTint="@color/primary_dark_green"
-        app:itemTextColor="@color/primary_dark_green"
+        android:background="@color/bg_light_cream"
+        app:itemIconTint="@color/nav_item_color_state"
+        app:itemTextColor="@color/nav_item_color_state"
+        app:itemRippleColor="@color/success_container"
+        app:itemActiveIndicatorStyle="@style/Widget.App.BottomNavigationView.ActiveIndicator"
+        app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

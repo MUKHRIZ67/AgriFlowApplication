@@ -85,6 +85,7 @@ public class RegisterActivity extends AppCompatActivity {
         user.put("fullName", name);
         user.put("email", email);
         user.put("phone", phone);
+        user.put("role", "farmer"); // Set default role
         user.put("farmName", farmName);
         user.put("farmLocation", farmLocation);
 
@@ -92,7 +93,9 @@ public class RegisterActivity extends AppCompatActivity {
                 .set(user)
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(RegisterActivity.this, "User Registered Successfully!", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(RegisterActivity.this, DashboardActivity.class));
+                    Intent intent = new Intent(RegisterActivity.this, DashboardActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
                     finish();
                 })
                 .addOnFailureListener(e -> {

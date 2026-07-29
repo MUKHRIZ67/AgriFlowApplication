@@ -3,10 +3,8 @@ package com.example.agriflowapplication;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,8 +22,6 @@ public class MainActivity extends AppCompatActivity {
     private EditText etEmail, etPassword;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    // Note: If you want to show a loading state, add a ProgressBar to activity_main.xml 
-    // and initialize it here. For now, we'll use a simple Toast.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,9 +30,10 @@ public class MainActivity extends AppCompatActivity {
         mAuth = FirebaseManager.getInstance().getAuth();
         db = FirebaseManager.getInstance().getDb();
 
-        // Auto-login check using Firebase
+        // Auto-login check
         if (mAuth.getCurrentUser() != null) {
-            checkUserRole(mAuth.getCurrentUser().getUid());
+            navigateToDashboard();
+            return;
         }
 
         EdgeToEdge.enable(this);
@@ -60,7 +57,6 @@ public class MainActivity extends AppCompatActivity {
         TextView btnForgotPassword = findViewById(R.id.btnForgotPassword);
         TextView btnRegister = findViewById(R.id.btnRegister);
 
-        // Login Button Listener
         btnLogin.setOnClickListener(v -> {
             String email = etEmail.getText().toString().trim();
             String password = etPassword.getText().toString().trim();
@@ -77,8 +73,8 @@ public class MainActivity extends AppCompatActivity {
 
             mAuth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this, task -> {
-                        if (task.isSuccessful() && mAuth.getCurrentUser() != null) {
-                            checkUserRole(mAuth.getCurrentUser().getUid());
+                        if (task.isSuccessful()) {
+                            navigateToDashboard();
                         } else {
                             String error = task.getException() != null ? task.getException().getMessage() : "Unknown error";
                             Toast.makeText(MainActivity.this, "Authentication Failed: " + error, Toast.LENGTH_LONG).show();
@@ -86,43 +82,38 @@ public class MainActivity extends AppCompatActivity {
                     });
         });
 
-        // Forgot Password Listener
-        btnForgotPassword.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, ForgotPasswordActivity.class);
-            startActivity(intent);
-        });
-
-        // Register Button Listener
-        btnRegister.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
-            startActivity(intent);
-        });
+        btnForgotPassword.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, ForgotPasswordActivity.class)));
+        btnRegister.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, RegisterActivity.class)));
     }
 
-    private void checkUserRole(String uid) {
-        db.collection("users").document(uid).get()
+    private void navigateToDashboard() {
+        if (mAuth.getCurrentUser() == null) return;
+
+        String userId = mAuth.getCurrentUser().getUid();
+        db.collection("users").document(userId).get()
                 .addOnSuccessListener(documentSnapshot -> {
+                    Intent intent;
                     if (documentSnapshot.exists()) {
                         String role = documentSnapshot.getString("role");
-                        
                         if ("admin".equalsIgnoreCase(role)) {
-                            Toast.makeText(MainActivity.this, "Admin Login Successful!", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(MainActivity.this, AdminDashboardActivity.class));
+                            intent = new Intent(MainActivity.this, AdminDashboardActivity.class);
                         } else {
-                            Toast.makeText(MainActivity.this, "User Login Successful!", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(MainActivity.this, DashboardActivity.class));
+                            intent = new Intent(MainActivity.this, DashboardActivity.class);
                         }
-                        finish();
                     } else {
-                        // If no document exists, assume standard user or handle error
-                        startActivity(new Intent(MainActivity.this, DashboardActivity.class));
-                        finish();
+                        // If no profile found, default to farmer dashboard
+                        intent = new Intent(MainActivity.this, DashboardActivity.class);
                     }
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(MainActivity.this, "Error checking role: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    // Fallback to standard dashboard
-                    startActivity(new Intent(MainActivity.this, DashboardActivity.class));
+                    Toast.makeText(MainActivity.this, "Error fetching user role: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Fallback to DashboardActivity
+                    Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
                     finish();
                 });
     }

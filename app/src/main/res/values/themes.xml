@@ -1,9 +1,17 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.AgriFlowApplication" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.AgriFlow" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/primary_dark_green</item>
+        <item name="android:windowBackground">@color/bg_light_cream</item>
+        <item name="colorSurface">@color/bg_light_cream</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorSecondary">@color/on_surface_variant</item>
     </style>
 
-    <style name="Theme.AgriFlowApplication" parent="Base.Theme.AgriFlowApplication" />
+    <style name="Theme.AgriFlow" parent="Base.Theme.AgriFlow" />
+
+    <style name="Widget.App.BottomNavigationView.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/success_container</item>
+    </style>
 </resources>

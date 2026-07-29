@@ -74,7 +74,8 @@ public class FarmerListActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
-                startActivity(new Intent(FarmerListActivity.this, AdminDashboardActivity.class));
+                startActivity(new Intent(FarmerListActivity.this, DashboardActivity.class));
+                finish();
                 return true;
             } else if (itemId == R.id.nav_manage) {
                 return true;

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AgriFlowApplication</string>
+    <string name="app_name">AgriFlow</string>
     <string name="logo_emoji">🌾</string>
     <string name="agriflow">AGRIFLOW</string>
     <string name="login">LOGIN</string>
