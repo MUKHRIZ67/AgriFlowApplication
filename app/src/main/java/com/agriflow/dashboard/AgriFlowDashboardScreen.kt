@@ -58,6 +58,7 @@ data class TelemetryState(
     val waterTankPercent: Int = 78,
     val temperatureCelsius: Float = 27.4f,
     val humidityPercent: Int = 61,
+    val lightIntensityLux: Float = 850.0f,
     val isOnline: Boolean = true
 )
 
@@ -129,6 +130,49 @@ fun AgriFlowDashboardScreen() {
         }
     }
 
+    // Real-time telemetry listener
+    DisposableEffect(Unit) {
+        val telemetryRef = db.collection("system_data").document("live_telemetry")
+        val registration = telemetryRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                telemetry = telemetry.copy(isOnline = false)
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null && snapshot.exists()) {
+                val moisture = snapshot.getLong("soilMoisture")?.toInt() ?: 42
+                val tank = snapshot.getLong("waterTankLevel")?.toInt() ?: 78
+                val temp = snapshot.getDouble("temperature")?.toFloat() ?: 27.4f
+                val hum = snapshot.getLong("humidity")?.toInt() ?: 61
+                
+                val luxVal = snapshot.get("lux") ?: snapshot.get("light_density") ?: snapshot.get("lightIntensity")
+                val light = when (luxVal) {
+                    is Double -> luxVal.toFloat()
+                    is Long -> luxVal.toFloat()
+                    is Int -> luxVal.toFloat()
+                    else -> 0f
+                }
+
+                val pump1 = snapshot.getBoolean("waterPump") ?: false
+                val pump2 = snapshot.getBoolean("fertilizerPump") ?: false
+
+                telemetry = telemetry.copy(
+                    soilMoisturePercent = moisture,
+                    waterTankPercent = tank,
+                    temperatureCelsius = temp,
+                    humidityPercent = hum,
+                    lightIntensityLux = light,
+                    isOnline = true
+                )
+                isWaterPumpOn = pump1
+                isFertilizerPumpOn = pump2
+            }
+        }
+        onDispose {
+            registration.remove()
+        }
+    }
+
     Scaffold(
         containerColor = Color(0xFFFCFDF6),
         topBar = {
@@ -166,9 +210,17 @@ fun AgriFlowDashboardScreen() {
                 Spacer(Modifier.height(10.dp))
                 IrrigationControlsCard(
                     isWaterPumpOn = isWaterPumpOn,
-                    onWaterPumpToggle = { isWaterPumpOn = it },
+                    onWaterPumpToggle = { newValue ->
+                        isWaterPumpOn = newValue
+                        db.collection("system_data").document("live_telemetry")
+                            .update("waterPump", newValue)
+                    },
                     isFertilizerPumpOn = isFertilizerPumpOn,
-                    onFertilizerPumpToggle = { isFertilizerPumpOn = it }
+                    onFertilizerPumpToggle = { newValue ->
+                        isFertilizerPumpOn = newValue
+                        db.collection("system_data").document("live_telemetry")
+                            .update("fertilizerPump", newValue)
+                    }
                 )
                 Spacer(Modifier.height(24.dp))
             }
@@ -373,6 +425,22 @@ private fun TelemetryGrid(telemetry: TelemetryState) {
                 isWarning = false
             )
         }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            RingMetricCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Filled.LightMode,
+                label = "Light intensity",
+                value = telemetry.lightIntensityLux,
+                isWarning = telemetry.lightIntensityLux > 1200f,
+                unit = " lx",
+                maxValue = 2000f,
+                precision = 1
+            )
+            Spacer(modifier = Modifier.weight(1f))
+        }
     }
 }
 
@@ -385,8 +453,11 @@ private fun RingMetricCard(
     modifier: Modifier = Modifier,
     icon: ImageVector,
     label: String,
-    value: Int,
-    isWarning: Boolean
+    value: Number,
+    isWarning: Boolean,
+    unit: String = "%",
+    maxValue: Float = 100f,
+    precision: Int = 0
 ) {
     val backgroundColor = if (isWarning) ErrorContainer else SurfaceContainer
     val contentColor = if (isWarning) OnErrorContainer else OnSurface
@@ -411,7 +482,7 @@ private fun RingMetricCard(
                     modifier = Modifier.size(20.dp)
                 )
                 CircularProgressRing(
-                    progress = value / 100f,
+                    progress = value.toFloat() / maxValue,
                     trackColor = SurfaceContainerHigh,
                     progressColor = ringColor,
                     size = 34.dp,
@@ -421,14 +492,20 @@ private fun RingMetricCard(
             Spacer(Modifier.height(8.dp))
             Text(text = label, fontSize = 12.sp, color = contentColor.copy(alpha = 0.75f))
             Row(verticalAlignment = Alignment.Bottom) {
+                val formattedValue = if (precision > 0) {
+                    "%.${precision}f".format(value.toFloat())
+                } else {
+                    value.toInt().toString()
+                }
+                
                 Text(
-                    text = value.toString(),
+                    text = formattedValue,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = contentColor
                 )
                 Text(
-                    text = "%",
+                    text = unit,
                     fontSize = 14.sp,
                     color = contentColor.copy(alpha = 0.75f),
                     modifier = Modifier.padding(start = 2.dp, bottom = 3.dp)

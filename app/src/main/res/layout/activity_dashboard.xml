@@ -362,6 +362,63 @@
                     </RelativeLayout>
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- Light Density -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="6dp"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/surface_container">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:id="@+id/ivLightIntensity"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_day"
+                            app:tint="#FBC02D" />
+
+                        <ProgressBar
+                            android:id="@+id/pbLightIntensity"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_alignParentEnd="true"
+                            android:indeterminate="false"
+                            android:progress="42"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:progressDrawable="@drawable/circular_ring" />
+
+                        <TextView
+                            android:id="@+id/labelLightIntensity"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@id/ivLightIntensity"
+                            android:layout_marginTop="8dp"
+                            android:text="Light intensity"
+                            android:textColor="@color/on_surface_variant"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvLightIntensity"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@id/labelLightIntensity"
+                            android:layout_marginTop="2dp"
+                            android:text="0 lx"
+                            android:textColor="@color/on_surface"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+
+                    </RelativeLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+
             </GridLayout>
 
             <!-- Irrigation Control -->

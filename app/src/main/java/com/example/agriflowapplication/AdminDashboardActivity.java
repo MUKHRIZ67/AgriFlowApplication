@@ -24,8 +24,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private ListenerRegistration telemetryListener;
 
     // Telemetry Views
-    private TextView tvSoilMoisture, tvWaterTank, tvTemperature, tvHumidity, tvHumidityStatus;
-    private android.widget.ProgressBar pbSoilMoisture, pbWaterTank, pbHumidity;
+    private TextView tvSoilMoisture, tvWaterTank, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity;
+    private android.widget.ProgressBar pbSoilMoisture, pbWaterTank, pbHumidity, pbLightIntensity;
     private android.view.View vTempIndicator;
     private com.google.android.material.materialswitch.MaterialSwitch switchWaterPump, switchFertilizerPump;
 
@@ -50,10 +50,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvTemperature = findViewById(R.id.tvTemperature);
         tvHumidity = findViewById(R.id.tvHumidity);
         tvHumidityStatus = findViewById(R.id.tvHumidityStatus);
+        tvLightIntensity = findViewById(R.id.tvLightIntensity);
 
         pbSoilMoisture = findViewById(R.id.pbSoilMoisture);
         pbWaterTank = findViewById(R.id.pbWaterTank);
         pbHumidity = findViewById(R.id.pbHumidity);
+        pbLightIntensity = findViewById(R.id.pbLightIntensity);
 
         vTempIndicator = findViewById(R.id.vTempIndicator);
         switchWaterPump = findViewById(R.id.switchWaterPump);
@@ -110,6 +112,17 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         Double tank = snapshot.getDouble("waterTankLevel");
                         Double temp = snapshot.getDouble("temperature");
                         Double hum = snapshot.getDouble("humidity");
+                        
+                        Object lightVal = snapshot.get("lux");
+                        if (lightVal == null) lightVal = snapshot.get("light_density");
+                        if (lightVal == null) lightVal = snapshot.get("lightIntensity");
+
+                        Double light = null;
+                        if (lightVal instanceof Double) light = (Double) lightVal;
+                        else if (lightVal instanceof Long) light = ((Long) lightVal).doubleValue();
+                        else if (lightVal instanceof Integer) light = ((Integer) lightVal).doubleValue();
+                        else if (lightVal instanceof Float) light = ((Float) lightVal).doubleValue();
+
                         Boolean pump1 = snapshot.getBoolean("waterPump");
                         Boolean pump2 = snapshot.getBoolean("fertilizerPump");
 
@@ -129,6 +142,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
                             tvHumidity.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", hum));
                             pbHumidity.setProgress(hum.intValue());
                             updateHumidityStatus(hum);
+                        }
+                        if (light != null) {
+                            tvLightIntensity.setText(String.format(java.util.Locale.getDefault(), "%.1f lx", light));
+                            int progress = (int) ((light / 2000.0) * 100);
+                            pbLightIntensity.setProgress(Math.min(100, progress));
                         }
                         
                         updateLastUpdated();

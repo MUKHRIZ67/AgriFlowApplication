@@ -25,8 +25,8 @@ public class DashboardActivity extends AppCompatActivity {
     private ListenerRegistration telemetryListener;
 
     // Telemetry Views
-    private TextView tvSoilMoisture, tvWaterTank, tvTemperature, tvHumidity, tvHumidityStatus;
-    private android.widget.ProgressBar pbSoilMoisture, pbWaterTank, pbHumidity;
+    private TextView tvSoilMoisture, tvWaterTank, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity;
+    private android.widget.ProgressBar pbSoilMoisture, pbWaterTank, pbHumidity, pbLightIntensity;
     private android.view.View vTempIndicator;
     private com.google.android.material.materialswitch.MaterialSwitch switchWaterPump, switchFertilizerPump;
 
@@ -53,10 +53,12 @@ public class DashboardActivity extends AppCompatActivity {
         tvTemperature = findViewById(R.id.tvTemperature);
         tvHumidity = findViewById(R.id.tvHumidity);
         tvHumidityStatus = findViewById(R.id.tvHumidityStatus);
+        tvLightIntensity = findViewById(R.id.tvLightIntensity);
 
         pbSoilMoisture = findViewById(R.id.pbSoilMoisture);
         pbWaterTank = findViewById(R.id.pbWaterTank);
         pbHumidity = findViewById(R.id.pbHumidity);
+        pbLightIntensity = findViewById(R.id.pbLightIntensity);
 
         vTempIndicator = findViewById(R.id.vTempIndicator);
         
@@ -142,6 +144,7 @@ public class DashboardActivity extends AppCompatActivity {
                 initialData.put("humidity", 60.0);
                 initialData.put("soilMoisture", 45.0);
                 initialData.put("waterTankLevel", 78.0);
+                initialData.put("light_density", 0.0);
                 initialData.put("waterPump", false);
                 initialData.put("fertilizerPump", false);
                 initialData.put("last_updated", com.google.firebase.Timestamp.now());
@@ -203,6 +206,17 @@ public class DashboardActivity extends AppCompatActivity {
                         Double tank = snapshot.getDouble("waterTankLevel");
                         Double temp = snapshot.getDouble("temperature");
                         Double hum = snapshot.getDouble("humidity");
+
+                        Object lightVal = snapshot.get("lux");
+                        if (lightVal == null) lightVal = snapshot.get("light_density");
+                        if (lightVal == null) lightVal = snapshot.get("lightIntensity");
+                        
+                        Double light = null;
+                        if (lightVal instanceof Double) light = (Double) lightVal;
+                        else if (lightVal instanceof Long) light = ((Long) lightVal).doubleValue();
+                        else if (lightVal instanceof Integer) light = ((Integer) lightVal).doubleValue();
+                        else if (lightVal instanceof Float) light = ((Float) lightVal).doubleValue();
+
                         Boolean pump1 = snapshot.getBoolean("waterPump");
                         Boolean pump2 = snapshot.getBoolean("fertilizerPump");
 
@@ -222,6 +236,12 @@ public class DashboardActivity extends AppCompatActivity {
                             tvHumidity.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", hum));
                             pbHumidity.setProgress(hum.intValue());
                             updateHumidityStatus(hum);
+                        }
+                        if (light != null) {
+                            tvLightIntensity.setText(String.format(java.util.Locale.getDefault(), "%.1f lx", light));
+                            // Normalize to 2000 lux for progress bar
+                            int progress = (int) ((light / 2000.0) * 100);
+                            pbLightIntensity.setProgress(Math.min(100, progress));
                         }
                         
                         updateLastUpdated();
