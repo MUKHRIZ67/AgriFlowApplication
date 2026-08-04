@@ -24,7 +24,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private ListenerRegistration telemetryListener;
 
     // Telemetry Views
-    private TextView tvSoilMoisture, tvWaterTank, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity;
+    private TextView tvSoilMoisture, tvSoilMoistureStatus, tvWaterTank, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity;
     private android.widget.ProgressBar pbSoilMoisture, pbWaterTank, pbHumidity, pbLightIntensity;
     private android.view.View vTempIndicator;
     private com.google.android.material.materialswitch.MaterialSwitch switchWaterPump, switchFertilizerPump;
@@ -46,6 +46,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvUserName = findViewById(R.id.tvUserName);
         tvLastUpdated = findViewById(R.id.tvLastUpdated);
         tvSoilMoisture = findViewById(R.id.tvSoilMoisture);
+        tvSoilMoistureStatus = findViewById(R.id.tvSoilMoistureStatus);
         tvWaterTank = findViewById(R.id.tvWaterTank);
         tvTemperature = findViewById(R.id.tvTemperature);
         tvHumidity = findViewById(R.id.tvHumidity);
@@ -113,9 +114,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         Double temp = snapshot.getDouble("temperature");
                         Double hum = snapshot.getDouble("humidity");
                         
-                        Object lightVal = snapshot.get("lux");
+                        Object lightVal = snapshot.get("lightIntensity");
+                        if (lightVal == null) lightVal = snapshot.get("lux");
                         if (lightVal == null) lightVal = snapshot.get("light_density");
-                        if (lightVal == null) lightVal = snapshot.get("lightIntensity");
 
                         Double light = null;
                         if (lightVal instanceof Double) light = (Double) lightVal;
@@ -129,6 +130,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         if (moisture != null) {
                             tvSoilMoisture.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", moisture));
                             pbSoilMoisture.setProgress(moisture.intValue());
+                            updateSoilMoistureStatus(moisture);
                         }
                         if (tank != null) {
                             tvWaterTank.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", tank));
@@ -144,9 +146,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
                             updateHumidityStatus(hum);
                         }
                         if (light != null) {
-                            tvLightIntensity.setText(String.format(java.util.Locale.getDefault(), "%.1f lx", light));
-                            int progress = (int) ((light / 2000.0) * 100);
-                            pbLightIntensity.setProgress(Math.min(100, progress));
+                            tvLightIntensity.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", light));
+                            pbLightIntensity.setProgress(light.intValue());
                         }
                         
                         updateLastUpdated();
@@ -191,6 +192,19 @@ public class AdminDashboardActivity extends AppCompatActivity {
         } else {
             tvHumidityStatus.setText("High");
             tvHumidityStatus.setTextColor(android.graphics.Color.parseColor("#448AFF"));
+        }
+    }
+
+    private void updateSoilMoistureStatus(double moisture) {
+        if (moisture <= 30) {
+            tvSoilMoistureStatus.setText("Dry");
+            tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#E53935"));
+        } else if (moisture <= 70) {
+            tvSoilMoistureStatus.setText("Moderate");
+            tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#FB8C00"));
+        } else {
+            tvSoilMoistureStatus.setText("Wet");
+            tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#43A047"));
         }
     }
 

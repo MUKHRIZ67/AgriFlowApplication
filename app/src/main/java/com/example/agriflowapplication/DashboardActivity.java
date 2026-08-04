@@ -25,7 +25,7 @@ public class DashboardActivity extends AppCompatActivity {
     private ListenerRegistration telemetryListener;
 
     // Telemetry Views
-    private TextView tvSoilMoisture, tvWaterTank, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity;
+    private TextView tvSoilMoisture, tvSoilMoistureStatus, tvWaterTank, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity;
     private android.widget.ProgressBar pbSoilMoisture, pbWaterTank, pbHumidity, pbLightIntensity;
     private android.view.View vTempIndicator;
     private com.google.android.material.materialswitch.MaterialSwitch switchWaterPump, switchFertilizerPump;
@@ -49,6 +49,7 @@ public class DashboardActivity extends AppCompatActivity {
         tvUserName = findViewById(R.id.tvUserName);
         tvLastUpdated = findViewById(R.id.tvLastUpdated);
         tvSoilMoisture = findViewById(R.id.tvSoilMoisture);
+        tvSoilMoistureStatus = findViewById(R.id.tvSoilMoistureStatus);
         tvWaterTank = findViewById(R.id.tvWaterTank);
         tvTemperature = findViewById(R.id.tvTemperature);
         tvHumidity = findViewById(R.id.tvHumidity);
@@ -184,6 +185,19 @@ public class DashboardActivity extends AppCompatActivity {
         }
     }
 
+    private void updateSoilMoistureStatus(double moisture) {
+        if (moisture <= 30) {
+            tvSoilMoistureStatus.setText("Dry");
+            tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#E53935"));
+        } else if (moisture <= 70) {
+            tvSoilMoistureStatus.setText("Moderate");
+            tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#FB8C00"));
+        } else {
+            tvSoilMoistureStatus.setText("Wet");
+            tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#43A047"));
+        }
+    }
+
     private void updateLastUpdated() {
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault());
         String currentTime = sdf.format(new java.util.Date());
@@ -207,9 +221,9 @@ public class DashboardActivity extends AppCompatActivity {
                         Double temp = snapshot.getDouble("temperature");
                         Double hum = snapshot.getDouble("humidity");
 
-                        Object lightVal = snapshot.get("lux");
+                        Object lightVal = snapshot.get("lightIntensity");
+                        if (lightVal == null) lightVal = snapshot.get("lux");
                         if (lightVal == null) lightVal = snapshot.get("light_density");
-                        if (lightVal == null) lightVal = snapshot.get("lightIntensity");
                         
                         Double light = null;
                         if (lightVal instanceof Double) light = (Double) lightVal;
@@ -223,6 +237,7 @@ public class DashboardActivity extends AppCompatActivity {
                         if (moisture != null) {
                             tvSoilMoisture.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", moisture));
                             pbSoilMoisture.setProgress(moisture.intValue());
+                            updateSoilMoistureStatus(moisture);
                         }
                         if (tank != null) {
                             tvWaterTank.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", tank));
@@ -238,10 +253,8 @@ public class DashboardActivity extends AppCompatActivity {
                             updateHumidityStatus(hum);
                         }
                         if (light != null) {
-                            tvLightIntensity.setText(String.format(java.util.Locale.getDefault(), "%.1f lx", light));
-                            // Normalize to 2000 lux for progress bar
-                            int progress = (int) ((light / 2000.0) * 100);
-                            pbLightIntensity.setProgress(Math.min(100, progress));
+                            tvLightIntensity.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", light));
+                            pbLightIntensity.setProgress(light.intValue());
                         }
                         
                         updateLastUpdated();

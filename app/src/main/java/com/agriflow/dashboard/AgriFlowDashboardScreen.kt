@@ -58,7 +58,7 @@ data class TelemetryState(
     val waterTankPercent: Int = 78,
     val temperatureCelsius: Float = 27.4f,
     val humidityPercent: Int = 61,
-    val lightIntensityLux: Float = 850.0f,
+    val lightIntensityPercent: Float = 85.0f,
     val isOnline: Boolean = true
 )
 
@@ -145,11 +145,11 @@ fun AgriFlowDashboardScreen() {
                 val temp = snapshot.getDouble("temperature")?.toFloat() ?: 27.4f
                 val hum = snapshot.getLong("humidity")?.toInt() ?: 61
                 
-                val luxVal = snapshot.get("lux") ?: snapshot.get("light_density") ?: snapshot.get("lightIntensity")
-                val light = when (luxVal) {
-                    is Double -> luxVal.toFloat()
-                    is Long -> luxVal.toFloat()
-                    is Int -> luxVal.toFloat()
+                val lightVal = snapshot.get("lightIntensity") ?: snapshot.get("lux") ?: snapshot.get("light_density")
+                val light = when (lightVal) {
+                    is Double -> lightVal.toFloat()
+                    is Long -> lightVal.toFloat()
+                    is Int -> lightVal.toFloat()
                     else -> 0f
                 }
 
@@ -161,7 +161,7 @@ fun AgriFlowDashboardScreen() {
                     waterTankPercent = tank,
                     temperatureCelsius = temp,
                     humidityPercent = hum,
-                    lightIntensityLux = light,
+                    lightIntensityPercent = light,
                     isOnline = true
                 )
                 isWaterPumpOn = pump1
@@ -394,12 +394,21 @@ private fun TelemetryGrid(telemetry: TelemetryState) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
+            val moisture = telemetry.soilMoisturePercent
+            val (status, statusColor) = when {
+                moisture <= 30 -> "Dry" to Color(0xFFE53935)
+                moisture <= 70 -> "Moderate" to Color(0xFFFB8C00)
+                else -> "Wet" to Color(0xFF43A047)
+            }
+            
             RingMetricCard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Filled.WaterDrop,
                 label = "Soil moisture",
-                value = telemetry.soilMoisturePercent,
-                isWarning = telemetry.soilMoisturePercent < 15
+                value = moisture,
+                isWarning = moisture < 15,
+                status = status,
+                statusColor = statusColor
             )
             RingMetricCard(
                 modifier = Modifier.weight(1f),
@@ -432,12 +441,12 @@ private fun TelemetryGrid(telemetry: TelemetryState) {
             RingMetricCard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Filled.LightMode,
-                label = "Light intensity",
-                value = telemetry.lightIntensityLux,
-                isWarning = telemetry.lightIntensityLux > 1200f,
-                unit = " lx",
-                maxValue = 2000f,
-                precision = 1
+                label = "Light Intensity (%)",
+                value = telemetry.lightIntensityPercent,
+                isWarning = telemetry.lightIntensityPercent > 80f,
+                unit = "%",
+                maxValue = 100f,
+                precision = 0
             )
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -457,11 +466,14 @@ private fun RingMetricCard(
     isWarning: Boolean,
     unit: String = "%",
     maxValue: Float = 100f,
-    precision: Int = 0
+    precision: Int = 0,
+    status: String? = null,
+    statusColor: Color = Color.Unspecified
 ) {
     val backgroundColor = if (isWarning) ErrorContainer else SurfaceContainer
     val contentColor = if (isWarning) OnErrorContainer else OnSurface
     val ringColor = if (isWarning) TankLow else AgriPrimary
+    val finalStatusColor = if (statusColor == Color.Unspecified) contentColor.copy(alpha = 0.8f) else statusColor
 
     Card(
         modifier = modifier,
@@ -509,6 +521,15 @@ private fun RingMetricCard(
                     fontSize = 14.sp,
                     color = contentColor.copy(alpha = 0.75f),
                     modifier = Modifier.padding(start = 2.dp, bottom = 3.dp)
+                )
+            }
+            if (status != null) {
+                Text(
+                    text = status,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = finalStatusColor,
+                    modifier = Modifier.padding(top = 2.dp)
                 )
             }
         }

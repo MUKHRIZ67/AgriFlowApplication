@@ -165,6 +165,17 @@
                             android:textColor="@color/on_surface"
                             android:textSize="22sp"
                             android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvSoilMoistureStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@id/tvSoilMoisture"
+                            android:layout_marginTop="2dp"
+                            android:text="Moderate"
+                            android:textColor="#FB8C00"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
                     </RelativeLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -400,7 +411,7 @@
                             android:layout_height="wrap_content"
                             android:layout_below="@id/ivLightIntensity"
                             android:layout_marginTop="8dp"
-                            android:text="Light intensity"
+                            android:text="Light Intensity (%)"
                             android:textColor="@color/on_surface_variant"
                             android:textSize="12sp" />
 
@@ -410,7 +421,7 @@
                             android:layout_height="wrap_content"
                             android:layout_below="@id/labelLightIntensity"
                             android:layout_marginTop="2dp"
-                            android:text="0 lx"
+                            android:text="0%"
                             android:textColor="@color/on_surface"
                             android:textSize="22sp"
                             android:textStyle="bold" />
