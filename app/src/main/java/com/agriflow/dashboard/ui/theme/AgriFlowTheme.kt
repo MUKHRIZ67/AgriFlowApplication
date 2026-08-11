@@ -12,26 +12,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 // ---------------------------------------------------------------------------
-// Light color scheme — agricultural green primary, minimalist off-white surface
+// IoT Dashboard Theme (Dark Navy)
 // ---------------------------------------------------------------------------
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF386A20),
+    primary = Color(0xFF4F46E5),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFB9F281),
-    onPrimaryContainer = Color(0xFF082100),
-    secondary = Color(0xFF38656A),
-    secondaryContainer = Color(0xFFBCEBF0),
-    background = Color(0xFFFCFDF6),
-    surface = Color(0xFFFCFDF6),
-    surfaceVariant = Color(0xFFEFF2E5),
-    onSurface = Color(0xFF1A1C16),
-    onSurfaceVariant = Color(0xFF43483D),
-    outline = Color(0xFF73796B),
-    outlineVariant = Color(0xFFC2C8B7),
-    error = Color(0xFFBA1A1A),
-    errorContainer = Color(0xFFFFDAD6),
-    onErrorContainer = Color(0xFF410002),
+    primaryContainer = Color(0xFF4F46E5),
+    onPrimaryContainer = Color(0xFFFFFFFF),
+    secondary = Color(0xFF3B82F6),
+    secondaryContainer = Color(0xFF1E293B),
+    background = Color(0xFF0F172A),
+    surface = Color(0xFF0F172A),
+    surfaceVariant = Color(0xFF1E293B),
+    onSurface = Color(0xFFF1F5F9),
+    onSurfaceVariant = Color(0xFF94A3B8),
+    outline = Color(0xFF334155),
+    outlineVariant = Color(0xFF26364D),
+    error = Color(0xFFEF4444),
+    errorContainer = Color(0xFFEF4444).copy(alpha = 0.2f),
+    onErrorContainer = Color(0xFFEF4444),
 )
 
 // Dark scheme kept minimal — the brief calls for a light minimalist aesthetic,

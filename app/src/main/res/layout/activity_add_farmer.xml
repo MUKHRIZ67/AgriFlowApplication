@@ -2,15 +2,16 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_add_farmer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_light_cream"
+    android:background="@color/iot_bg"
     tools:context=".AddFarmerActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
+        android:background="@color/iot_bg"
         app:elevation="0dp">
 
         <androidx.appcompat.widget.Toolbar
@@ -18,9 +19,9 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@android:drawable/ic_menu_revert"
-            app:navigationIconTint="@color/primary_dark_green"
+            app:navigationIconTint="@color/iot_on_surface"
             app:title="Add New Farmer"
-            app:titleTextColor="@color/primary_dark_green" />
+            app:titleTextColor="@color/iot_on_surface" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -38,7 +39,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="24dp"
-                app:cardElevation="2dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/iot_surface">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -50,11 +52,16 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="@string/full_name"
+                        android:textColorHint="@color/iot_on_surface_variant"
+                        app:hintTextColor="@color/iot_primary"
+                        app:boxStrokeColor="@color/iot_primary"
+                        app:boxBackgroundColor="@color/iot_surface_high"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etFullName"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:textColor="@color/iot_on_surface"
                             android:inputType="textPersonName" />
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -63,11 +70,16 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:hint="@string/email"
+                        android:textColorHint="@color/iot_on_surface_variant"
+                        app:hintTextColor="@color/iot_primary"
+                        app:boxStrokeColor="@color/iot_primary"
+                        app:boxBackgroundColor="@color/iot_surface_high"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etEmail"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:textColor="@color/iot_on_surface"
                             android:inputType="textEmailAddress" />
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -76,11 +88,16 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:hint="@string/phone"
+                        android:textColorHint="@color/iot_on_surface_variant"
+                        app:hintTextColor="@color/iot_primary"
+                        app:boxStrokeColor="@color/iot_primary"
+                        app:boxBackgroundColor="@color/iot_surface_high"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etPhone"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:textColor="@color/iot_on_surface"
                             android:inputType="phone" />
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -89,11 +106,16 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:hint="@string/farm_name"
+                        android:textColorHint="@color/iot_on_surface_variant"
+                        app:hintTextColor="@color/iot_primary"
+                        app:boxStrokeColor="@color/iot_primary"
+                        app:boxBackgroundColor="@color/iot_surface_high"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etFarmName"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:textColor="@color/iot_on_surface"
                             android:inputType="text" />
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -102,11 +124,16 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:hint="@string/farm_location"
+                        android:textColorHint="@color/iot_on_surface_variant"
+                        app:hintTextColor="@color/iot_primary"
+                        app:boxStrokeColor="@color/iot_primary"
+                        app:boxBackgroundColor="@color/iot_surface_high"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etFarmLocation"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:textColor="@color/iot_on_surface"
                             android:inputType="text" />
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -115,12 +142,18 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:hint="@string/password"
+                        android:textColorHint="@color/iot_on_surface_variant"
+                        app:hintTextColor="@color/iot_primary"
+                        app:boxStrokeColor="@color/iot_primary"
+                        app:boxBackgroundColor="@color/iot_surface_high"
                         app:passwordToggleEnabled="true"
+                        app:passwordToggleTint="@color/iot_on_surface_variant"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etPassword"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:textColor="@color/iot_on_surface"
                             android:inputType="textPassword" />
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -132,7 +165,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="32dp"
-                android:backgroundTint="@color/primary_dark_green"
+                android:backgroundTint="@color/iot_primary"
                 android:text="@string/create_account"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
@@ -145,7 +178,7 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="16dp"
                 android:visibility="gone"
-                android:indeterminateTint="@color/primary_dark_green" />
+                android:indeterminateTint="@color/iot_primary" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

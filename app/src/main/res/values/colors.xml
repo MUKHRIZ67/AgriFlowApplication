@@ -19,6 +19,24 @@
     <color name="success_container">#DCF5DC</color>
     <color name="text_grey">#43483D</color>
 
+    <!-- IoT Dark Theme (Admin) -->
+    <color name="iot_bg">#0F172A</color>
+    <color name="iot_surface">#1E293B</color>
+    <color name="iot_surface_high">#26364D</color>
+    <color name="iot_primary">#4F46E5</color>
+    <color name="iot_secondary">#3B82F6</color>
+    <color name="iot_accent">#22D3EE</color>
+    <color name="iot_on_surface">#F1F5F9</color>
+    <color name="iot_on_surface_secondary">#CBD5E1</color>
+    <color name="iot_on_surface_variant">#94A3B8</color>
+    <color name="iot_border">#334155</color>
+    <color name="iot_success">#14B8A6</color>
+    <color name="iot_warning">#F59E0B</color>
+    <color name="iot_error">#EF4444</color>
+    <color name="iot_disabled">#64748B</color>
+
+
+
     <!-- Compatibility with existing files -->
     <color name="primary_green">#386A20</color>
     <color name="light_bg">#FCFDF6</color>

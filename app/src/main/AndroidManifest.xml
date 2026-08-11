@@ -48,7 +48,14 @@
             android:name=".ProfileActivity"
             android:exported="false" />
         <activity
+            android:name=".AdminProfileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AgriFlow.Admin" />
+        <activity
             android:name=".ChangePasswordActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MoistureHistoryActivity"
             android:exported="false" />
     </application>
 

@@ -5,8 +5,11 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
     android:layout_marginVertical="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@color/iot_surface"
+    app:strokeColor="@color/iot_border"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -25,7 +28,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Farmer Name"
-                android:textColor="@color/black"
+                android:textColor="@color/iot_on_surface"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -34,7 +37,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Farm Name"
-                android:textColor="@color/text_grey"
+                android:textColor="@color/iot_on_surface_secondary"
                 android:textSize="14sp" />
         </LinearLayout>
 
@@ -44,7 +47,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="EDIT"
-            android:textColor="@color/primary_green" />
+            android:textColor="@color/iot_accent" />
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

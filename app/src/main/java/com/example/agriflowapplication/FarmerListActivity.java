@@ -74,13 +74,30 @@ public class FarmerListActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
-                startActivity(new Intent(FarmerListActivity.this, DashboardActivity.class));
-                finish();
+                com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+                if (user != null) {
+                    FirebaseFirestore.getInstance().collection("users")
+                            .document(user.getUid())
+                            .get()
+                            .addOnSuccessListener(documentSnapshot -> {
+                                Intent intent;
+                                if (documentSnapshot.exists() && "admin".equalsIgnoreCase(documentSnapshot.getString("role"))) {
+                                    intent = new Intent(FarmerListActivity.this, AdminDashboardActivity.class);
+                                } else {
+                                    intent = new Intent(FarmerListActivity.this, DashboardActivity.class);
+                                }
+                                startActivity(intent);
+                                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                                finish();
+                            });
+                }
                 return true;
             } else if (itemId == R.id.nav_manage) {
                 return true;
             } else if (itemId == R.id.nav_profile) {
-                startActivity(new Intent(FarmerListActivity.this, ProfileActivity.class));
+                startActivity(new Intent(FarmerListActivity.this, AdminProfileActivity.class));
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                finish();
                 return true;
             }
             return false;

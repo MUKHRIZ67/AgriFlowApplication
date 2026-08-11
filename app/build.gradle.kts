@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
     implementation(libs.material)
+    implementation(libs.mpandroidchart)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -29,6 +29,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private android.view.View vTempIndicator;
     private com.google.android.material.materialswitch.MaterialSwitch switchWaterPump, switchFertilizerPump;
 
+    private long lastHistoryLogTime = 0;
+    private static final long LOG_INTERVAL_MS = 60000;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,6 +51,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvSoilMoisture = findViewById(R.id.tvSoilMoisture);
         tvSoilMoistureStatus = findViewById(R.id.tvSoilMoistureStatus);
         tvWaterTank = findViewById(R.id.tvWaterTank);
+        tvWaterTank.setText("Loading...");
         tvTemperature = findViewById(R.id.tvTemperature);
         tvHumidity = findViewById(R.id.tvHumidity);
         tvHumidityStatus = findViewById(R.id.tvHumidityStatus);
@@ -79,15 +83,22 @@ public class AdminDashboardActivity extends AppCompatActivity {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
                 return true;
-            } else if (itemId == R.id.nav_history || itemId == R.id.nav_schedule) {
+            } else if (itemId == R.id.nav_history) {
+                startActivity(new Intent(AdminDashboardActivity.this, MoistureHistoryActivity.class));
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_schedule) {
                 Toast.makeText(this, "Coming Soon!", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (itemId == R.id.nav_manage) {
                 startActivity(new Intent(AdminDashboardActivity.this, FarmerListActivity.class));
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
                 finish();
                 return true;
             } else if (itemId == R.id.nav_profile) {
-                startActivity(new Intent(AdminDashboardActivity.this, ProfileActivity.class));
+                startActivity(new Intent(AdminDashboardActivity.this, AdminProfileActivity.class));
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
                 finish();
                 return true;
             }
@@ -104,25 +115,22 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .addSnapshotListener((snapshot, e) -> {
                     if (e != null) {
                         android.util.Log.e("AgriFlow_Debug", "Listen failed.", e);
+                        tvWaterTank.setText("Error");
                         return;
                     }
 
                     if (snapshot != null && snapshot.exists()) {
                         android.util.Log.d("AgriFlow_Debug", "Admin New Data Received: " + snapshot.getData());
-                        Double moisture = snapshot.getDouble("soilMoisture");
-                        Double tank = snapshot.getDouble("waterTankLevel");
-                        Double temp = snapshot.getDouble("temperature");
-                        Double hum = snapshot.getDouble("humidity");
-                        
-                        Object lightVal = snapshot.get("lightIntensity");
-                        if (lightVal == null) lightVal = snapshot.get("lux");
-                        if (lightVal == null) lightVal = snapshot.get("light_density");
+                        Double moisture = getSafeDouble(snapshot, "soilMoisture");
+                        Double tank = getSafeDouble(snapshot, "waterTankLevel");
+                        if (tank == null) tank = getSafeDouble(snapshot, "water_level");
 
-                        Double light = null;
-                        if (lightVal instanceof Double) light = (Double) lightVal;
-                        else if (lightVal instanceof Long) light = ((Long) lightVal).doubleValue();
-                        else if (lightVal instanceof Integer) light = ((Integer) lightVal).doubleValue();
-                        else if (lightVal instanceof Float) light = ((Float) lightVal).doubleValue();
+                        Double temp = getSafeDouble(snapshot, "temperature");
+                        Double hum = getSafeDouble(snapshot, "humidity");
+                        
+                        Double light = getSafeDouble(snapshot, "lux");
+                        if (light == null) light = getSafeDouble(snapshot, "lightIntensity");
+                        if (light == null) light = getSafeDouble(snapshot, "light_density");
 
                         Boolean pump1 = snapshot.getBoolean("waterPump");
                         Boolean pump2 = snapshot.getBoolean("fertilizerPump");
@@ -131,11 +139,22 @@ public class AdminDashboardActivity extends AppCompatActivity {
                             tvSoilMoisture.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", moisture));
                             pbSoilMoisture.setProgress(moisture.intValue());
                             updateSoilMoistureStatus(moisture);
+
+                            // Log all sensors to history if interval passed
+                            long currentTime = System.currentTimeMillis();
+                            if (currentTime - lastHistoryLogTime >= LOG_INTERVAL_MS) {
+                                logAllSensorsToHistory(moisture, temp, hum, light);
+                                lastHistoryLogTime = currentTime;
+                            }
                         }
+                        
                         if (tank != null) {
                             tvWaterTank.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", tank));
                             pbWaterTank.setProgress(tank.intValue());
+                        } else {
+                            tvWaterTank.setText("N/A");
                         }
+
                         if (temp != null) {
                             tvTemperature.setText(String.format(java.util.Locale.getDefault(), "%.1f°C", temp));
                             updateTemperatureIndicator(temp);
@@ -164,10 +183,19 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         }
                     } else {
                         android.util.Log.w("AgriFlow_Debug", "Admin Snapshot is null or doesn't exist");
+                        tvWaterTank.setText("No Data");
                     }
                 });
 
         setupPumpListeners();
+    }
+
+    private Double getSafeDouble(com.google.firebase.firestore.DocumentSnapshot snapshot, String field) {
+        Object val = snapshot.get(field);
+        if (val instanceof Number) {
+            return ((Number) val).doubleValue();
+        }
+        return null;
     }
 
     private void updateTemperatureIndicator(double temp) {
@@ -185,26 +213,26 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private void updateHumidityStatus(double humidity) {
         if (humidity < 40) {
             tvHumidityStatus.setText("Low");
-            tvHumidityStatus.setTextColor(android.graphics.Color.parseColor("#FF8A65"));
+            tvHumidityStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_warning));
         } else if (humidity <= 70) {
             tvHumidityStatus.setText("Normal");
-            tvHumidityStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.primary_dark_green));
+            tvHumidityStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_success));
         } else {
             tvHumidityStatus.setText("High");
-            tvHumidityStatus.setTextColor(android.graphics.Color.parseColor("#448AFF"));
+            tvHumidityStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_secondary));
         }
     }
 
     private void updateSoilMoistureStatus(double moisture) {
         if (moisture <= 30) {
             tvSoilMoistureStatus.setText("Dry");
-            tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#E53935"));
+            tvSoilMoistureStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_error));
         } else if (moisture <= 70) {
             tvSoilMoistureStatus.setText("Moderate");
-            tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#FB8C00"));
+            tvSoilMoistureStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_warning));
         } else {
             tvSoilMoistureStatus.setText("Wet");
-            tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#43A047"));
+            tvSoilMoistureStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_success));
         }
     }
 
@@ -223,6 +251,28 @@ public class AdminDashboardActivity extends AppCompatActivity {
         switchFertilizerPump.setOnCheckedChangeListener((buttonView, isChecked) -> 
             db.collection("system_data").document("live_telemetry").update("fertilizerPump", isChecked)
         );
+    }
+
+    private void logAllSensorsToHistory(Double moisture, Double temp, Double hum, Double light) {
+        com.google.firebase.Timestamp now = com.google.firebase.Timestamp.now();
+        if (moisture != null) {
+            db.collection("moisture_history").add(new HistoryRecord("moisture", moisture, "%%", "Prototype Zone", "Admin Terminal", now));
+        }
+        if (temp != null) {
+            db.collection("moisture_history").add(new HistoryRecord("temperature", temp, "°C", "Prototype Zone", "Admin Terminal", now));
+        }
+        if (hum != null) {
+            db.collection("moisture_history").add(new HistoryRecord("humidity", hum, "%%", "Prototype Zone", "Admin Terminal", now));
+        }
+        if (light != null) {
+            db.collection("moisture_history").add(new HistoryRecord("light", light, "%%", "Prototype Zone", "Admin Terminal", now));
+        }
+    }
+
+    private void logMoistureToHistory(double moisture) {
+        HistoryRecord record = new HistoryRecord("moisture", moisture, "%%", "Prototype Zone", "Admin Terminal", com.google.firebase.Timestamp.now());
+        db.collection("moisture_history").add(record)
+                .addOnFailureListener(e -> android.util.Log.e("AgriFlow", "Failed to log admin auto history", e));
     }
 
     @Override

@@ -11,6 +11,16 @@
 
     <style name="Theme.AgriFlow" parent="Base.Theme.AgriFlow" />
 
+    <style name="Theme.AgriFlow.Admin" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/iot_primary</item>
+        <item name="android:windowBackground">@color/iot_bg</item>
+        <item name="colorSurface">@color/iot_bg</item>
+        <item name="colorOnSurface">@color/iot_on_surface</item>
+        <item name="colorSecondary">@color/iot_secondary</item>
+        <item name="android:textColorPrimary">@color/iot_on_surface</item>
+        <item name="android:textColorSecondary">@color/iot_on_surface_secondary</item>
+    </style>
+
     <style name="Widget.App.BottomNavigationView.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">@color/success_container</item>
     </style>

@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_profile"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/iot_bg"
+    tools:context=".AdminProfileActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="@android:drawable/ic_menu_revert"
+            app:navigationIconTint="@color/iot_on_surface"
+            app:title="Admin Profile"
+            app:titleTextColor="@color/iot_on_surface" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        android:indeterminateTint="@color/iot_primary"/>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:paddingBottom="80dp"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <!-- Profile Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:layout_marginBottom="32dp">
+
+                <TextView
+                    android:id="@+id/tvHeaderName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Admin Name"
+                    android:textColor="@color/iot_on_surface"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvUserRole"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/rounded_top_bg"
+                    android:backgroundTint="@color/iot_warning"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="4dp"
+                    android:text="Admin"
+                    android:textColor="@color/black"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="PERSONAL INFORMATION"
+                android:textColor="@color/iot_on_surface_variant"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
+
+            <!-- Personal Information Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/iot_surface"
+                app:strokeColor="@color/iot_border"
+                app:strokeWidth="1dp"
+                android:layout_marginBottom="24dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@android:drawable/ic_menu_myplaces"
+                            app:tint="@color/iot_on_surface_variant" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginStart="16dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Full Name"
+                                android:textColor="@color/iot_on_surface_variant"
+                                android:textSize="12sp" />
+                            <TextView
+                                android:id="@+id/tvFullName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Admin User"
+                                android:textColor="@color/iot_on_surface"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@android:drawable/ic_dialog_email"
+                            app:tint="@color/iot_on_surface_variant" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginStart="16dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Email Address"
+                                android:textColor="@color/iot_on_surface_variant"
+                                android:textSize="12sp" />
+                            <TextView
+                                android:id="@+id/tvEmail"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="admin@agriflow.com"
+                                android:textColor="@color/iot_on_surface"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@android:drawable/ic_menu_call"
+                            app:tint="@color/iot_on_surface_variant" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginStart="16dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Phone Number"
+                                android:textColor="@color/iot_on_surface_variant"
+                                android:textSize="12sp" />
+                            <TextView
+                                android:id="@+id/tvPhone"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="+60 12-345 6789"
+                                android:textColor="@color/iot_on_surface"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="ACCOUNT ACTIONS"
+                android:textColor="@color/iot_on_surface_variant"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
+
+            <Button
+                android:id="@+id/btnEditProfile"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="@color/iot_primary"
+                android:text="Edit Profile"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                app:cornerRadius="16dp"
+                app:icon="@android:drawable/ic_menu_edit"
+                app:iconGravity="textStart" />
+
+            <Button
+                android:id="@+id/btnChangePassword"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="12dp"
+                android:text="Change Password"
+                android:textAllCaps="false"
+                android:textColor="@color/iot_on_surface"
+                android:backgroundTint="@color/iot_surface_high"
+                app:cornerRadius="16dp"
+                app:icon="@android:drawable/ic_lock_lock"
+                app:iconGravity="textStart"
+                app:iconTint="@color/iot_on_surface" />
+
+            <Button
+                android:id="@+id/btnLogout"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="24dp"
+                android:text="@string/logout"
+                android:textAllCaps="false"
+                android:textColor="@color/iot_error"
+                android:backgroundTint="#33EF4444"
+                app:cornerRadius="16dp"
+                app:icon="@android:drawable/ic_lock_power_off"
+                app:iconGravity="textStart"
+                app:iconTint="@color/iot_error" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/iot_bg"
+        app:itemIconTint="@color/iot_nav_item_color_state"
+        app:itemTextColor="@color/iot_nav_item_color_state"
+        app:itemRippleColor="@color/iot_success"
+        app:itemActiveIndicatorStyle="@style/Widget.App.BottomNavigationView.ActiveIndicator"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/admin_bottom_nav_menu" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

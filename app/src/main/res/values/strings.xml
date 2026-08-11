@@ -41,4 +41,30 @@
     <string name="farmer_deleted_success">Farmer deleted successfully</string>
     <string name="create_account">Create Account</string>
     <string name="add_farmer">Add Farmer</string>
+
+    <!-- History Feature -->
+    <string name="history_title">Environmental History</string>
+    <string name="sensor_moisture">Soil Moisture</string>
+    <string name="sensor_temperature">Temperature</string>
+    <string name="sensor_humidity">Humidity</string>
+    <string name="sensor_light">Light Intensity</string>
+
+    <string name="unit_percent">%%</string>
+    <string name="unit_celsius">°C</string>
+
+    <string name="filter_start_date">Start Date</string>
+    <string name="filter_end_date">End Date</string>
+    <string name="filter_clear">Clear Filters</string>
+
+    <string name="sort_newest">Newest First</string>
+    <string name="sort_oldest">Oldest First</string>
+
+    <string name="empty_moisture">No soil moisture history available.</string>
+    <string name="empty_temperature">No temperature history available.</string>
+    <string name="empty_humidity">No humidity history available.</string>
+    <string name="empty_light">No light intensity history available.</string>
+
+    <string name="error_load_failed">Failed to load history data.</string>
+    <string name="retry">Retry</string>
+    <string name="loading">Loading history data...</string>
 </resources>

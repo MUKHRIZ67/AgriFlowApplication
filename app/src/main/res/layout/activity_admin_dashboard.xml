@@ -5,7 +5,7 @@
     android:id="@+id/main_admin_dashboard"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_light_cream"
+    android:background="@color/iot_bg"
     tools:context=".AdminDashboardActivity">
 
     <androidx.core.widget.NestedScrollView
@@ -31,7 +31,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="AgriFlow"
-                    android:textColor="@color/on_surface"
+                    android:textColor="@color/iot_on_surface"
                     android:textSize="24sp"
                     android:textStyle="bold" />
 
@@ -42,7 +42,7 @@
                     android:layout_below="@id/tvAppName"
                     android:text="User"
                     android:visibility="gone"
-                    android:textColor="@color/on_surface_variant"
+                    android:textColor="@color/iot_on_surface_variant"
                     android:textSize="12sp" />
 
                 <TextView
@@ -51,7 +51,7 @@
                     android:layout_height="wrap_content"
                     android:layout_below="@id/tvUserName"
                     android:text="Syncing..."
-                    android:textColor="@color/on_surface_variant"
+                    android:textColor="@color/iot_on_surface_variant"
                     android:textSize="10sp"
                     android:textStyle="italic" />
 
@@ -60,7 +60,7 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
-                    android:background="@drawable/bg_badge_online"
+                    android:background="@drawable/iot_bg_badge_online"
                     android:gravity="center_vertical"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="6dp">
@@ -68,14 +68,14 @@
                     <View
                         android:layout_width="8dp"
                         android:layout_height="8dp"
-                        android:background="@drawable/dot_online"
+                        android:background="@drawable/iot_dot_online"
                         android:layout_marginEnd="6dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="ONLINE"
-                        android:textColor="#386A20"
+                        android:textColor="@color/iot_success"
                         android:textSize="10sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -89,7 +89,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@android:drawable/ic_lock_power_off"
                     android:visibility="gone"
-                    app:tint="@color/critical_red"
+                    app:tint="@color/iot_error"
                     android:contentDescription="@string/logout" />
 
             </RelativeLayout>
@@ -101,7 +101,7 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="12dp"
                 android:text="LIVE TELEMETRY"
-                android:textColor="@color/on_surface_variant"
+                android:textColor="@color/iot_on_surface_variant"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.05" />
@@ -121,7 +121,7 @@
                     android:layout_margin="6dp"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/surface_container">
+                    app:cardBackgroundColor="@color/iot_surface">
 
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -143,7 +143,7 @@
                             android:indeterminate="false"
                             android:progress="45"
                             style="?android:attr/progressBarStyleHorizontal"
-                            android:progressDrawable="@drawable/circular_ring" />
+                            android:progressDrawable="@drawable/iot_circular_ring" />
 
                         <TextView
                             android:id="@+id/labelSoilMoisture"
@@ -152,7 +152,7 @@
                             android:layout_below="@id/ivSoilMoisture"
                             android:layout_marginTop="8dp"
                             android:text="Soil moisture"
-                            android:textColor="@color/on_surface_variant"
+                            android:textColor="@color/iot_on_surface_variant"
                             android:textSize="12sp" />
 
                         <TextView
@@ -162,7 +162,7 @@
                             android:layout_below="@id/labelSoilMoisture"
                             android:layout_marginTop="2dp"
                             android:text="45%"
-                            android:textColor="@color/on_surface"
+                            android:textColor="@color/iot_on_surface"
                             android:textSize="22sp"
                             android:textStyle="bold" />
 
@@ -187,7 +187,7 @@
                     android:layout_margin="6dp"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/surface_container">
+                    app:cardBackgroundColor="@color/iot_surface">
 
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -207,9 +207,9 @@
                             android:layout_height="32dp"
                             android:layout_alignParentEnd="true"
                             android:indeterminate="false"
-                            android:progress="78"
+                            android:progress="0"
                             style="?android:attr/progressBarStyleHorizontal"
-                            android:progressDrawable="@drawable/circular_ring" />
+                            android:progressDrawable="@drawable/iot_circular_ring" />
 
                         <TextView
                             android:id="@+id/labelWaterTank"
@@ -218,7 +218,7 @@
                             android:layout_below="@id/ivWaterTank"
                             android:layout_marginTop="8dp"
                             android:text="Water tank level"
-                            android:textColor="@color/on_surface_variant"
+                            android:textColor="@color/iot_on_surface_variant"
                             android:textSize="12sp" />
 
                         <TextView
@@ -227,8 +227,8 @@
                             android:layout_height="wrap_content"
                             android:layout_below="@id/labelWaterTank"
                             android:layout_marginTop="2dp"
-                            android:text="78%"
-                            android:textColor="@color/on_surface"
+                            android:text="..."
+                            android:textColor="@color/iot_on_surface"
                             android:textSize="22sp"
                             android:textStyle="bold" />
 
@@ -243,7 +243,7 @@
                     android:layout_margin="6dp"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/surface_container">
+                    app:cardBackgroundColor="@color/iot_surface">
 
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
@@ -265,7 +265,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="Temperature"
-                            android:textColor="@color/on_surface_variant"
+                            android:textColor="@color/iot_on_surface_variant"
                             android:textSize="12sp"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toBottomOf="@id/ivTemperature" />
@@ -276,7 +276,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="27.8°C"
-                            android:textColor="@color/on_surface"
+                            android:textColor="@color/iot_on_surface"
                             android:textSize="22sp"
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="parent"
@@ -314,7 +314,7 @@
                     android:layout_margin="6dp"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/surface_container">
+                    app:cardBackgroundColor="@color/iot_surface">
 
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -336,7 +336,7 @@
                             android:indeterminate="false"
                             android:progress="60"
                             style="?android:attr/progressBarStyleHorizontal"
-                            android:progressDrawable="@drawable/circular_ring" />
+                            android:progressDrawable="@drawable/iot_circular_ring" />
 
                         <TextView
                             android:id="@+id/labelHumidity"
@@ -345,7 +345,7 @@
                             android:layout_below="@id/ivHumidity"
                             android:layout_marginTop="8dp"
                             android:text="Humidity"
-                            android:textColor="@color/on_surface_variant"
+                            android:textColor="@color/iot_on_surface_variant"
                             android:textSize="12sp" />
 
                         <TextView
@@ -355,7 +355,7 @@
                             android:layout_below="@id/labelHumidity"
                             android:layout_marginTop="2dp"
                             android:text="60%"
-                            android:textColor="@color/on_surface"
+                            android:textColor="@color/iot_on_surface"
                             android:textSize="22sp"
                             android:textStyle="bold" />
 
@@ -367,7 +367,7 @@
                             android:layout_below="@id/pbHumidity"
                             android:layout_marginTop="10dp"
                             android:text="Normal"
-                            android:textColor="@color/primary_dark_green"
+                            android:textColor="@color/iot_success"
                             android:textSize="10sp"
                             android:textStyle="bold" />
                     </RelativeLayout>
@@ -381,7 +381,7 @@
                     android:layout_margin="6dp"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/surface_container">
+                    app:cardBackgroundColor="@color/iot_surface">
 
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -403,7 +403,7 @@
                             android:indeterminate="false"
                             android:progress="42"
                             style="?android:attr/progressBarStyleHorizontal"
-                            android:progressDrawable="@drawable/circular_ring" />
+                            android:progressDrawable="@drawable/iot_circular_ring" />
 
                         <TextView
                             android:id="@+id/labelLightIntensity"
@@ -412,7 +412,7 @@
                             android:layout_below="@id/ivLightIntensity"
                             android:layout_marginTop="8dp"
                             android:text="Light Intensity (%)"
-                            android:textColor="@color/on_surface_variant"
+                            android:textColor="@color/iot_on_surface_variant"
                             android:textSize="12sp" />
 
                         <TextView
@@ -422,7 +422,7 @@
                             android:layout_below="@id/labelLightIntensity"
                             android:layout_marginTop="2dp"
                             android:text="0%"
-                            android:textColor="@color/on_surface"
+                            android:textColor="@color/iot_on_surface"
                             android:textSize="22sp"
                             android:textStyle="bold" />
 
@@ -439,7 +439,7 @@
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="12dp"
                 android:text="IRRIGATION CONTROLS"
-                android:textColor="@color/on_surface_variant"
+                android:textColor="@color/iot_on_surface_variant"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.05" />
@@ -449,7 +449,7 @@
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="@color/surface_container">
+                app:cardBackgroundColor="@color/iot_surface">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -468,13 +468,13 @@
                             android:layout_height="40dp"
                             app:cardCornerRadius="10dp"
                             app:cardElevation="0dp"
-                            app:cardBackgroundColor="@color/surface_container_high">
+                            app:cardBackgroundColor="@color/iot_surface_high">
                             <ImageView
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:layout_gravity="center"
                                 android:src="@android:drawable/ic_menu_gallery"
-                                app:tint="@color/on_surface_variant" />
+                                app:tint="@color/iot_on_surface_variant" />
                         </com.google.android.material.card.MaterialCardView>
 
                         <LinearLayout
@@ -489,13 +489,13 @@
                                 android:layout_height="wrap_content"
                                 android:text="Water pump"
                                 android:textStyle="bold"
-                                android:textColor="@color/on_surface"/>
+                                android:textColor="@color/iot_on_surface"/>
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Off"
                                 android:textSize="12sp"
-                                android:textColor="@color/on_surface_variant"/>
+                                android:textColor="@color/iot_on_surface_variant"/>
                         </LinearLayout>
 
                         <com.google.android.material.materialswitch.MaterialSwitch
@@ -509,7 +509,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="@color/surface_container_high"
+                        android:background="@color/iot_border"
                         android:layout_marginHorizontal="12dp"/>
 
                     <RelativeLayout
@@ -523,13 +523,13 @@
                             android:layout_height="40dp"
                             app:cardCornerRadius="10dp"
                             app:cardElevation="0dp"
-                            app:cardBackgroundColor="@color/surface_container_high">
+                            app:cardBackgroundColor="@color/iot_surface_high">
                             <ImageView
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:layout_gravity="center"
                                 android:src="@android:drawable/ic_menu_edit"
-                                app:tint="@color/on_surface_variant" />
+                                app:tint="@color/iot_on_surface_variant" />
                         </com.google.android.material.card.MaterialCardView>
 
                         <LinearLayout
@@ -544,13 +544,13 @@
                                 android:layout_height="wrap_content"
                                 android:text="Fertilizer pump"
                                 android:textStyle="bold"
-                                android:textColor="@color/on_surface"/>
+                                android:textColor="@color/iot_on_surface"/>
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Off"
                                 android:textSize="12sp"
-                                android:textColor="@color/on_surface_variant"/>
+                                android:textColor="@color/iot_on_surface_variant"/>
                         </LinearLayout>
 
                         <com.google.android.material.materialswitch.MaterialSwitch
@@ -570,7 +570,7 @@
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="12dp"
                 android:text="TODAY'S SCHEDULE"
-                android:textColor="@color/on_surface_variant"
+                android:textColor="@color/iot_on_surface_variant"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.05" />
@@ -580,7 +580,7 @@
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="@color/surface_container">
+                app:cardBackgroundColor="@color/iot_surface">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -597,11 +597,11 @@
                             android:id="@+id/time1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/bg_schedule_time"
+                            android:background="@drawable/iot_bg_schedule_time"
                             android:paddingHorizontal="12dp"
                             android:paddingVertical="6dp"
                             android:text="08:00 AM"
-                            android:textColor="#006064"
+                            android:textColor="@color/iot_accent"
                             android:textSize="12sp"
                             android:textStyle="bold"/>
                         <TextView
@@ -612,7 +612,7 @@
                             android:layout_centerVertical="true"
                             android:text="Zone 1"
                             android:textStyle="bold"
-                            android:textColor="@color/on_surface"/>
+                            android:textColor="@color/iot_on_surface"/>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -620,13 +620,13 @@
                             android:layout_centerVertical="true"
                             android:text="Completed"
                             android:textSize="11sp"
-                            android:textColor="@color/on_surface_variant"/>
+                            android:textColor="@color/iot_on_surface_variant"/>
                     </RelativeLayout>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="@color/surface_container_high"
+                        android:background="@color/iot_border"
                         android:layout_marginHorizontal="12dp"/>
 
                     <!-- Schedule Item 2 -->
@@ -638,11 +638,11 @@
                             android:id="@+id/time2"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/bg_schedule_time"
+                            android:background="@drawable/iot_bg_schedule_time"
                             android:paddingHorizontal="12dp"
                             android:paddingVertical="6dp"
                             android:text="12:30 PM"
-                            android:textColor="#006064"
+                            android:textColor="@color/iot_accent"
                             android:textSize="12sp"
                             android:textStyle="bold"/>
                         <TextView
@@ -653,7 +653,7 @@
                             android:layout_centerVertical="true"
                             android:text="Zone 2"
                             android:textStyle="bold"
-                            android:textColor="@color/on_surface"/>
+                            android:textColor="@color/iot_on_surface"/>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -661,13 +661,13 @@
                             android:layout_centerVertical="true"
                             android:text="Completed"
                             android:textSize="11sp"
-                            android:textColor="@color/on_surface_variant"/>
+                            android:textColor="@color/iot_on_surface_variant"/>
                     </RelativeLayout>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="@color/surface_container_high"
+                        android:background="@color/iot_border"
                         android:layout_marginHorizontal="12dp"/>
 
                     <!-- Schedule Item 3 -->
@@ -679,11 +679,11 @@
                             android:id="@+id/time3"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/bg_schedule_time"
+                            android:background="@drawable/iot_bg_schedule_time"
                             android:paddingHorizontal="12dp"
                             android:paddingVertical="6dp"
                             android:text="04:00 PM"
-                            android:textColor="#006064"
+                            android:textColor="@color/iot_accent"
                             android:textSize="12sp"
                             android:textStyle="bold"/>
                         <TextView
@@ -694,7 +694,7 @@
                             android:layout_centerVertical="true"
                             android:text="Zone 3"
                             android:textStyle="bold"
-                            android:textColor="@color/on_surface"/>
+                            android:textColor="@color/iot_on_surface"/>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -702,7 +702,7 @@
                             android:layout_centerVertical="true"
                             android:text="Upcoming"
                             android:textSize="11sp"
-                            android:textColor="@color/on_surface_variant"/>
+                            android:textColor="@color/iot_on_surface_variant"/>
                     </RelativeLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -714,7 +714,7 @@
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="12dp"
                 android:text="RECENT ALERTS"
-                android:textColor="@color/on_surface_variant"
+                android:textColor="@color/iot_on_surface_variant"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.05" />
@@ -726,7 +726,7 @@
                 android:layout_marginBottom="12dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="#F8D7DA">
+                app:cardBackgroundColor="#33EF4444">
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -736,7 +736,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@android:drawable/stat_sys_warning"
-                        app:tint="#721C24"/>
+                        app:tint="@color/iot_error"/>
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -748,7 +748,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Water tank is too low"
-                            android:textColor="#721C24"
+                            android:textColor="@color/iot_error"
                             android:textStyle="bold"
                             android:textSize="14sp"/>
                         <TextView
@@ -756,7 +756,7 @@
                             android:layout_height="wrap_content"
                             android:text="10 min ago"
                             android:textSize="12sp"
-                            android:textColor="#721C24"/>
+                            android:textColor="@color/iot_error"/>
                     </LinearLayout>
                     <ImageButton
                         android:id="@+id/btnDismiss1"
@@ -765,7 +765,7 @@
                         android:layout_alignParentEnd="true"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:src="@android:drawable/ic_menu_close_clear_cancel"
-                        app:tint="#721C24"/>
+                        app:tint="@color/iot_error"/>
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -775,7 +775,7 @@
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="#FFF3CD">
+                app:cardBackgroundColor="#33F59E0B">
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -785,7 +785,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@android:drawable/ic_dialog_info"
-                        app:tint="#856404"/>
+                        app:tint="@color/iot_warning"/>
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -797,7 +797,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="High light density detected"
-                            android:textColor="#856404"
+                            android:textColor="@color/iot_warning"
                             android:textStyle="bold"
                             android:textSize="14sp"/>
                         <TextView
@@ -805,7 +805,7 @@
                             android:layout_height="wrap_content"
                             android:text="42 min ago"
                             android:textSize="12sp"
-                            android:textColor="#856404"/>
+                            android:textColor="@color/iot_warning"/>
                     </LinearLayout>
                     <ImageButton
                         android:id="@+id/btnDismiss2"
@@ -814,7 +814,7 @@
                         android:layout_alignParentEnd="true"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:src="@android:drawable/ic_menu_close_clear_cancel"
-                        app:tint="#856404"/>
+                        app:tint="@color/iot_warning"/>
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -826,10 +826,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/bg_light_cream"
-        app:itemIconTint="@color/nav_item_color_state"
-        app:itemTextColor="@color/nav_item_color_state"
-        app:itemRippleColor="@color/success_container"
+        android:background="@color/iot_bg"
+        app:itemIconTint="@color/iot_nav_item_color_state"
+        app:itemTextColor="@color/iot_nav_item_color_state"
+        app:itemRippleColor="@color/iot_success"
         app:itemActiveIndicatorStyle="@style/Widget.App.BottomNavigationView.ActiveIndicator"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/admin_bottom_nav_menu" />

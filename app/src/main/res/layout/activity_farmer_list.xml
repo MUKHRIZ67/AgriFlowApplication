@@ -4,17 +4,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/light_bg"
+    android:background="@color/iot_bg"
     tools:context=".FarmerListActivity">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/primary_green"
+        android:background="@color/iot_surface"
         app:layout_constraintTop_toTopOf="parent"
         app:title="Manage Farmers"
-        app:titleTextColor="@color/white" />
+        app:titleTextColor="@color/iot_on_surface" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvFarmers"
@@ -43,7 +43,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="@color/primary_dark_green"
+        app:backgroundTint="@color/iot_primary"
         app:tint="@color/white"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
         app:layout_constraintEnd_toEndOf="parent"
@@ -53,9 +53,13 @@
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        app:itemIconTint="@color/primary_dark_green"
-        app:itemTextColor="@color/primary_dark_green"
+        android:layout_gravity="bottom"
+        android:background="@color/iot_bg"
+        app:itemIconTint="@color/iot_nav_item_color_state"
+        app:itemTextColor="@color/iot_nav_item_color_state"
+        app:itemRippleColor="@color/iot_success"
+        app:itemActiveIndicatorStyle="@style/Widget.App.BottomNavigationView.ActiveIndicator"
+        app:labelVisibilityMode="labeled"
         app:menu="@menu/admin_bottom_nav_menu"
         app:layout_constraintBottom_toBottomOf="parent" />
 

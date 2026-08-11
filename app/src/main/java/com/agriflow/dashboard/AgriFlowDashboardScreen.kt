@@ -55,7 +55,7 @@ data class ScheduleEvent(
 
 data class TelemetryState(
     val soilMoisturePercent: Int = 42,
-    val waterTankPercent: Int = 78,
+    val waterTankPercent: Int = 0,
     val temperatureCelsius: Float = 27.4f,
     val humidityPercent: Int = 61,
     val lightIntensityPercent: Float = 85.0f,
@@ -63,20 +63,58 @@ data class TelemetryState(
 )
 
 // ---------------------------------------------------------------------------
-// Color tokens (light, minimalist, Material 3 aligned)
+// Color tokens
 // ---------------------------------------------------------------------------
 
-private val AgriPrimary = Color(0xFF386A20)
-private val SurfaceContainer = Color(0xFFEFF2E5)
-private val SurfaceContainerHigh = Color(0xFFE3E6D9)
-private val OnSurface = Color(0xFF1A1C16)
-private val OnSurfaceVariant = Color(0xFF43483D)
-private val ErrorContainer = Color(0xFFFFDAD6)
-private val OnErrorContainer = Color(0xFF410002)
-private val SuccessContainer = Color(0xFFDCF5DC)
-private val WarningContainer = Color(0xFFFFF3D6)
-private val OnWarningContainer = Color(0xFF5C3D00)
-private val TankLow = Color(0xFFBA1A1A)
+data class DashboardColors(
+    val primary: Color,
+    val background: Color,
+    val surface: Color,
+    val surfaceHigh: Color,
+    val onSurface: Color,
+    val onSurfaceVariant: Color,
+    val errorContainer: Color,
+    val onErrorContainer: Color,
+    val successContainer: Color,
+    val warningContainer: Color,
+    val onWarningContainer: Color,
+    val accent: Color,
+    val border: Color
+)
+
+private val FarmerColors = DashboardColors(
+    primary = Color(0xFF386A20),
+    background = Color(0xFFFCFDF6),
+    surface = Color(0xFFEFF2E5),
+    surfaceHigh = Color(0xFFE3E6D9),
+    onSurface = Color(0xFF1A1C16),
+    onSurfaceVariant = Color(0xFF43483D),
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF410002),
+    successContainer = Color(0xFFDCF5DC),
+    warningContainer = Color(0xFFFFF3D6),
+    onWarningContainer = Color(0xFF5C3D00),
+    accent = Color(0xFF386A20),
+    border = Color(0xFFE3E6D9)
+)
+
+private val AdminColors = DashboardColors(
+    primary = Color(0xFF4F46E5),
+    background = Color(0xFF0F172A),
+    surface = Color(0xFF1E293B),
+    surfaceHigh = Color(0xFF26364D),
+    onSurface = Color(0xFFF1F5F9),
+    onSurfaceVariant = Color(0xFF94A3B8),
+    errorContainer = Color(0xFFEF4444).copy(alpha = 0.2f),
+    onErrorContainer = Color(0xFFEF4444),
+    successContainer = Color(0xFF14B8A6).copy(alpha = 0.2f),
+    warningContainer = Color(0xFFF59E0B).copy(alpha = 0.2f),
+    onWarningContainer = Color(0xFFF59E0B),
+    accent = Color(0xFF22D3EE),
+    border = Color(0xFF334155)
+)
+
+val LocalDashboardColors = staticCompositionLocalOf { FarmerColors }
 
 // ---------------------------------------------------------------------------
 // Screen entry point
@@ -140,18 +178,21 @@ fun AgriFlowDashboardScreen() {
             }
 
             if (snapshot != null && snapshot.exists()) {
-                val moisture = snapshot.getLong("soilMoisture")?.toInt() ?: 42
-                val tank = snapshot.getLong("waterTankLevel")?.toInt() ?: 78
-                val temp = snapshot.getDouble("temperature")?.toFloat() ?: 27.4f
-                val hum = snapshot.getLong("humidity")?.toInt() ?: 61
+                val data = snapshot.data ?: emptyMap()
                 
-                val lightVal = snapshot.get("lightIntensity") ?: snapshot.get("lux") ?: snapshot.get("light_density")
-                val light = when (lightVal) {
-                    is Double -> lightVal.toFloat()
-                    is Long -> lightVal.toFloat()
-                    is Int -> lightVal.toFloat()
-                    else -> 0f
+                fun getSafeInt(field: String): Int? {
+                    return (data[field] as? Number)?.toInt()
                 }
+                fun getSafeFloat(field: String): Float? {
+                    return (data[field] as? Number)?.toFloat()
+                }
+
+                val moisture = getSafeInt("soilMoisture") ?: 0
+                val tank = getSafeInt("waterTankLevel") ?: getSafeInt("water_level") ?: 0
+                val temp = getSafeFloat("temperature") ?: 0f
+                val hum = getSafeInt("humidity") ?: 0
+                
+                val light = getSafeFloat("lux") ?: getSafeFloat("lightIntensity") ?: getSafeFloat("light_density") ?: 0f
 
                 val pump1 = snapshot.getBoolean("waterPump") ?: false
                 val pump2 = snapshot.getBoolean("fertilizerPump") ?: false
@@ -173,23 +214,27 @@ fun AgriFlowDashboardScreen() {
         }
     }
 
-    Scaffold(
-        containerColor = Color(0xFFFCFDF6),
-        topBar = {
-            AgriFlowTopBar(
-                userName = userName,
-                isOnline = telemetry.isOnline
-            )
-        },
-        bottomBar = {
-            AgriFlowBottomBar(
-                isAdmin = userRole.equals("admin", ignoreCase = true),
-                onNavigate = { activityClass ->
-                    context.startActivity(Intent(context, activityClass))
-                }
-            )
-        }
-    ) { innerPadding ->
+    val isAdmin = userRole.equals("admin", ignoreCase = true)
+    val colorScheme = if (isAdmin) AdminColors else FarmerColors
+
+    CompositionLocalProvider(LocalDashboardColors provides colorScheme) {
+        Scaffold(
+            containerColor = colorScheme.background,
+            topBar = {
+                AgriFlowTopBar(
+                    userName = userName,
+                    isOnline = telemetry.isOnline
+                )
+            },
+            bottomBar = {
+                AgriFlowBottomBar(
+                    isAdmin = isAdmin,
+                    onNavigate = { activityClass ->
+                        context.startActivity(Intent(context, activityClass))
+                    }
+                )
+            }
+        ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -255,6 +300,7 @@ fun AgriFlowDashboardScreen() {
         }
     }
 }
+}
 
 // ---------------------------------------------------------------------------
 // Top bar
@@ -263,19 +309,21 @@ fun AgriFlowDashboardScreen() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AgriFlowTopBar(userName: String, isOnline: Boolean) {
+    val colors = LocalDashboardColors.current
     TopAppBar(
         title = {
             Column {
                 Text(
                     text = userName,
                     fontSize = 14.sp,
-                    color = OnSurfaceVariant,
+                    color = colors.onSurfaceVariant,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
                     text = "AgriFlow Dashboard",
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 20.sp
+                    fontSize = 20.sp,
+                    color = colors.onSurface
                 )
             }
         },
@@ -284,15 +332,16 @@ private fun AgriFlowTopBar(userName: String, isOnline: Boolean) {
             Spacer(Modifier.width(12.dp))
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color(0xFFFCFDF6)
+            containerColor = colors.background
         )
     )
 }
 
 @Composable
 private fun StatusBadge(isOnline: Boolean) {
-    val backgroundColor = if (isOnline) SuccessContainer else ErrorContainer
-    val dotColor = if (isOnline) AgriPrimary else TankLow
+    val colors = LocalDashboardColors.current
+    val backgroundColor = if (isOnline) colors.successContainer else colors.errorContainer
+    val dotColor = if (isOnline) colors.primary else colors.onErrorContainer
     val label = if (isOnline) "ONLINE" else "OFFLINE"
 
     Row(
@@ -313,7 +362,7 @@ private fun StatusBadge(isOnline: Boolean) {
             text = label,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = if (isOnline) Color(0xFF0B3B0F) else OnErrorContainer
+            color = if (isOnline) colors.primary else colors.onErrorContainer
         )
     }
 }
@@ -324,8 +373,9 @@ private fun StatusBadge(isOnline: Boolean) {
 
 @Composable
 private fun AgriFlowBottomBar(isAdmin: Boolean, onNavigate: (Class<*>) -> Unit) {
+    val colors = LocalDashboardColors.current
     NavigationBar(
-        containerColor = Color(0xFFFCFDF6),
+        containerColor = colors.background,
         tonalElevation = 8.dp
     ) {
         NavigationBarItem(
@@ -334,9 +384,11 @@ private fun AgriFlowBottomBar(isAdmin: Boolean, onNavigate: (Class<*>) -> Unit) 
             selected = true,
             onClick = { /* Already on Home */ },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = AgriPrimary,
-                selectedTextColor = AgriPrimary,
-                indicatorColor = SuccessContainer
+                selectedIconColor = colors.primary,
+                selectedTextColor = colors.primary,
+                indicatorColor = colors.successContainer,
+                unselectedIconColor = colors.onSurfaceVariant,
+                unselectedTextColor = colors.onSurfaceVariant
             )
         )
         
@@ -347,7 +399,11 @@ private fun AgriFlowBottomBar(isAdmin: Boolean, onNavigate: (Class<*>) -> Unit) 
             onClick = { 
                 // Using DashboardActivity as the "Schedule/History" view for now
                 onNavigate(DashboardActivity::class.java)
-            }
+            },
+            colors = NavigationBarItemDefaults.colors(
+                unselectedIconColor = colors.onSurfaceVariant,
+                unselectedTextColor = colors.onSurfaceVariant
+            )
         )
 
         if (isAdmin) {
@@ -355,7 +411,11 @@ private fun AgriFlowBottomBar(isAdmin: Boolean, onNavigate: (Class<*>) -> Unit) 
                 icon = { Icon(Icons.Filled.People, contentDescription = "Farmers") },
                 label = { Text("Farmers") },
                 selected = false,
-                onClick = { onNavigate(FarmerListActivity::class.java) }
+                onClick = { onNavigate(FarmerListActivity::class.java) },
+                colors = NavigationBarItemDefaults.colors(
+                    unselectedIconColor = colors.onSurfaceVariant,
+                    unselectedTextColor = colors.onSurfaceVariant
+                )
             )
         }
 
@@ -363,7 +423,11 @@ private fun AgriFlowBottomBar(isAdmin: Boolean, onNavigate: (Class<*>) -> Unit) 
             icon = { Icon(Icons.Filled.Person, contentDescription = "Profile") },
             label = { Text("Profile") },
             selected = false,
-            onClick = { onNavigate(ProfileActivity::class.java) }
+            onClick = { onNavigate(ProfileActivity::class.java) },
+            colors = NavigationBarItemDefaults.colors(
+                unselectedIconColor = colors.onSurfaceVariant,
+                unselectedTextColor = colors.onSurfaceVariant
+            )
         )
     }
 }
@@ -374,12 +438,13 @@ private fun AgriFlowBottomBar(isAdmin: Boolean, onNavigate: (Class<*>) -> Unit) 
 
 @Composable
 private fun SectionLabel(text: String) {
+    val colors = LocalDashboardColors.current
     Text(
         text = text.uppercase(),
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
         letterSpacing = 0.8.sp,
-        color = OnSurfaceVariant
+        color = colors.onSurfaceVariant
     )
 }
 
@@ -389,6 +454,7 @@ private fun SectionLabel(text: String) {
 
 @Composable
 private fun TelemetryGrid(telemetry: TelemetryState) {
+    val colors = LocalDashboardColors.current
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -396,9 +462,9 @@ private fun TelemetryGrid(telemetry: TelemetryState) {
         ) {
             val moisture = telemetry.soilMoisturePercent
             val (status, statusColor) = when {
-                moisture <= 30 -> "Dry" to Color(0xFFE53935)
-                moisture <= 70 -> "Moderate" to Color(0xFFFB8C00)
-                else -> "Wet" to Color(0xFF43A047)
+                moisture <= 30 -> "Dry" to colors.onErrorContainer
+                moisture <= 70 -> "Moderate" to colors.onWarningContainer
+                else -> "Wet" to colors.primary
             }
             
             RingMetricCard(
@@ -470,9 +536,10 @@ private fun RingMetricCard(
     status: String? = null,
     statusColor: Color = Color.Unspecified
 ) {
-    val backgroundColor = if (isWarning) ErrorContainer else SurfaceContainer
-    val contentColor = if (isWarning) OnErrorContainer else OnSurface
-    val ringColor = if (isWarning) TankLow else AgriPrimary
+    val colors = LocalDashboardColors.current
+    val backgroundColor = if (isWarning) colors.errorContainer else colors.surface
+    val contentColor = if (isWarning) colors.onErrorContainer else colors.onSurface
+    val ringColor = if (isWarning) colors.onErrorContainer else colors.primary
     val finalStatusColor = if (statusColor == Color.Unspecified) contentColor.copy(alpha = 0.8f) else statusColor
 
     Card(
@@ -495,7 +562,7 @@ private fun RingMetricCard(
                 )
                 CircularProgressRing(
                     progress = value.toFloat() / maxValue,
-                    trackColor = SurfaceContainerHigh,
+                    trackColor = colors.surfaceHigh,
                     progressColor = ringColor,
                     size = 34.dp,
                     strokeWidth = 4.dp
@@ -574,32 +641,33 @@ private fun TemperatureMetricCard(
     minTemp: Float = 10f,
     maxTemp: Float = 42f
 ) {
+    val colors = LocalDashboardColors.current
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Icon(
                 imageVector = Icons.Filled.Thermostat,
                 contentDescription = "Temperature",
-                tint = OnSurface,
+                tint = colors.onSurface,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(Modifier.height(8.dp))
-            Text(text = "Temperature", fontSize = 12.sp, color = OnSurfaceVariant)
+            Text(text = "Temperature", fontSize = 12.sp, color = colors.onSurfaceVariant)
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = "%.1f".format(temperatureCelsius),
                     fontSize = 26.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = OnSurface
+                    color = colors.onSurface
                 )
                 Text(
                     text = "°C",
                     fontSize = 14.sp,
-                    color = OnSurfaceVariant,
+                    color = colors.onSurfaceVariant,
                     modifier = Modifier.padding(start = 2.dp, bottom = 3.dp)
                 )
             }
@@ -619,6 +687,7 @@ private fun TemperatureGaugeBar(
     minTemp: Float,
     maxTemp: Float
 ) {
+    val colors = LocalDashboardColors.current
     val fraction = ((temperature - minTemp) / (maxTemp - minTemp)).coerceIn(0f, 1f)
     val gradient = Brush.horizontalGradient(
         colors = listOf(
@@ -645,7 +714,7 @@ private fun TemperatureGaugeBar(
                 .size(12.dp)
                 .clip(CircleShape)
                 .background(Color.White)
-                .border(width = 2.dp, color = OnSurface, shape = CircleShape)
+                .border(width = 2.dp, color = colors.onSurface, shape = CircleShape)
         )
     }
 }
@@ -661,9 +730,10 @@ private fun IrrigationControlsCard(
     isFertilizerPumpOn: Boolean,
     onFertilizerPumpToggle: (Boolean) -> Unit
 ) {
+    val colors = LocalDashboardColors.current
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
@@ -674,7 +744,7 @@ private fun IrrigationControlsCard(
                 checked = isWaterPumpOn,
                 onCheckedChange = onWaterPumpToggle
             )
-            HorizontalDivider(color = SurfaceContainerHigh)
+            HorizontalDivider(color = colors.surfaceHigh)
             ControlRow(
                 icon = Icons.Filled.Science,
                 title = "Fertilizer pump",
@@ -694,6 +764,7 @@ private fun ControlRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    val colors = LocalDashboardColors.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -709,14 +780,14 @@ private fun ControlRow(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(SurfaceContainerHigh),
+                    .background(colors.surfaceHigh),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = icon, contentDescription = title, tint = OnSurface, modifier = Modifier.size(18.dp))
+                Icon(imageVector = icon, contentDescription = title, tint = colors.onSurface, modifier = Modifier.size(18.dp))
             }
             Column {
-                Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = OnSurface)
-                Text(text = subtitle, fontSize = 12.sp, color = OnSurfaceVariant)
+                Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                Text(text = subtitle, fontSize = 12.sp, color = colors.onSurfaceVariant)
             }
         }
         Switch(
@@ -724,9 +795,9 @@ private fun ControlRow(
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = AgriPrimary,
-                uncheckedThumbColor = OnSurfaceVariant,
-                uncheckedTrackColor = SurfaceContainerHigh
+                checkedTrackColor = colors.primary,
+                uncheckedThumbColor = colors.onSurfaceVariant,
+                uncheckedTrackColor = colors.surfaceHigh
             )
         )
     }
@@ -738,16 +809,17 @@ private fun ControlRow(
 
 @Composable
 private fun ScheduleCard(events: List<ScheduleEvent>) {
+    val colors = LocalDashboardColors.current
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)) {
             events.forEachIndexed { index, event ->
                 ScheduleRow(event)
                 if (index != events.lastIndex) {
-                    HorizontalDivider(color = SurfaceContainerHigh)
+                    HorizontalDivider(color = colors.surfaceHigh)
                 }
             }
         }
@@ -756,6 +828,7 @@ private fun ScheduleCard(events: List<ScheduleEvent>) {
 
 @Composable
 private fun ScheduleRow(event: ScheduleEvent) {
+    val colors = LocalDashboardColors.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -766,27 +839,27 @@ private fun ScheduleRow(event: ScheduleEvent) {
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFFBCEBF0))
+                .background(colors.accent.copy(alpha = 0.2f))
                 .padding(horizontal = 9.dp, vertical = 5.dp)
         ) {
             Text(
                 text = event.time,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF032F33)
+                color = colors.accent
             )
         }
         Text(
             text = event.zone,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = OnSurface,
+            color = colors.onSurface,
             modifier = Modifier.weight(1f)
         )
         Text(
             text = if (event.completed) "Completed" else "Upcoming",
             fontSize = 11.sp,
-            color = OnSurfaceVariant,
+            color = colors.onSurfaceVariant,
             textAlign = TextAlign.End
         )
     }
@@ -798,9 +871,10 @@ private fun ScheduleRow(event: ScheduleEvent) {
 
 @Composable
 private fun AlertCard(alert: SystemAlert, onDismiss: (SystemAlert) -> Unit) {
+    val colors = LocalDashboardColors.current
     val isCritical = alert.severity == AlertSeverity.CRITICAL
-    val backgroundColor = if (isCritical) ErrorContainer else WarningContainer
-    val titleColor = if (isCritical) OnErrorContainer else OnWarningContainer
+    val backgroundColor = if (isCritical) colors.errorContainer else colors.warningContainer
+    val titleColor = if (isCritical) colors.onErrorContainer else colors.onWarningContainer
     val icon = if (isCritical) Icons.Filled.Warning else Icons.Filled.LightMode
 
     Card(
@@ -824,13 +898,13 @@ private fun AlertCard(alert: SystemAlert, onDismiss: (SystemAlert) -> Unit) {
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = alert.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = titleColor)
-                Text(text = alert.timeAgo, fontSize = 11.sp, color = OnSurfaceVariant)
+                Text(text = alert.timeAgo, fontSize = 11.sp, color = colors.onSurfaceVariant)
             }
             IconButton(onClick = { onDismiss(alert) }, modifier = Modifier.size(20.dp)) {
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = "Dismiss alert",
-                    tint = OnSurfaceVariant,
+                    tint = colors.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -840,9 +914,10 @@ private fun AlertCard(alert: SystemAlert, onDismiss: (SystemAlert) -> Unit) {
 
 @Composable
 private fun EmptyAlertsCard() {
+    val colors = LocalDashboardColors.current
     Card(
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(
@@ -851,7 +926,7 @@ private fun EmptyAlertsCard() {
                 .padding(vertical = 16.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "No active alerts", fontSize = 13.sp, color = OnSurfaceVariant)
+            Text(text = "No active alerts", fontSize = 13.sp, color = colors.onSurfaceVariant)
         }
     }
 }

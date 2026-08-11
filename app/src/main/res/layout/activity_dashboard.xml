@@ -207,7 +207,7 @@
                             android:layout_height="32dp"
                             android:layout_alignParentEnd="true"
                             android:indeterminate="false"
-                            android:progress="78"
+                            android:progress="0"
                             style="?android:attr/progressBarStyleHorizontal"
                             android:progressDrawable="@drawable/circular_ring" />
 
@@ -227,7 +227,7 @@
                             android:layout_height="wrap_content"
                             android:layout_below="@id/labelWaterTank"
                             android:layout_marginTop="2dp"
-                            android:text="78%"
+                            android:text="..."
                             android:textColor="@color/on_surface"
                             android:textSize="22sp"
                             android:textStyle="bold" />
