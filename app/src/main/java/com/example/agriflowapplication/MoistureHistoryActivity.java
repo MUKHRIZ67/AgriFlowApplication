@@ -244,7 +244,7 @@ public class MoistureHistoryActivity extends AppCompatActivity {
     }
 
     private String getUnitForType(String type) {
-        return "temperature".equalsIgnoreCase(type) ? "°C" : "%%";
+        return "temperature".equalsIgnoreCase(type) ? "°C" : "%";
     }
 
     private void setupChart() {

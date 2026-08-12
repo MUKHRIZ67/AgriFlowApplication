@@ -35,7 +35,8 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
         HistoryRecord record = records.get(position);
         Context context = holder.itemView.getContext();
         
-        String unit = record.getUnit() != null ? record.getUnit() : "%%";
+        String unit = record.getUnit() != null ? record.getUnit() : "%";
+        if ("%%".equals(unit)) unit = "%";
         holder.tvReadingValue.setText(String.format(Locale.getDefault(), "%.1f%s", record.getValue(), unit));
         
         String sensorInfo = (record.getDeviceId() != null ? record.getDeviceId() : "Unknown Sensor");

@@ -49,7 +49,7 @@
     <string name="sensor_humidity">Humidity</string>
     <string name="sensor_light">Light Intensity</string>
 
-    <string name="unit_percent">%%</string>
+    <string name="unit_percent">%</string>
     <string name="unit_celsius">°C</string>
 
     <string name="filter_start_date">Start Date</string>
