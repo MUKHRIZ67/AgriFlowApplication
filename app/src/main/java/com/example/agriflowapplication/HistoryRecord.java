@@ -21,10 +21,6 @@ public class HistoryRecord {
         this.timestamp = timestamp;
     }
 
-    // Support legacy field for migration/backward compatibility if needed
-    public double getMoisture() { return value; }
-    public void setMoisture(double moisture) { this.value = moisture; }
-
     public String getSensorType() { return sensorType; }
     public void setSensorType(String sensorType) { this.sensorType = sensorType; }
 

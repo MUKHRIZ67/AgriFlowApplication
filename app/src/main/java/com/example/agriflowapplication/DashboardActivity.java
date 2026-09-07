@@ -2,6 +2,7 @@ package com.example.agriflowapplication;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,18 +18,28 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class DashboardActivity extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    private TextView tvUserName, tvLastUpdated;
-    private ListenerRegistration telemetryListener;
+    private TextView tvUserName, tvLastUpdated, tvNotificationBadge;
+    private ListenerRegistration telemetryListener, notificationListener;
+    private NotificationAdapter alertsAdapter;
+    private List<NotificationRecord> recentAlerts;
+    private View tvNoRecentAlerts;
 
     // Telemetry Views
-    private TextView tvSoilMoisture, tvSoilMoistureStatus, tvWaterTank, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity;
+    private TextView tvSoilMoisture, tvSoilMoistureStatus, tvWaterTank, tvWaterTankStatus, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity, tvLightIntensityStatus;
     private android.widget.ProgressBar pbSoilMoisture, pbWaterTank, pbHumidity, pbLightIntensity;
     private android.view.View vTempIndicator;
     private com.google.android.material.materialswitch.MaterialSwitch switchWaterPump, switchFertilizerPump;
+    private String farmLocation = "Unknown Location";
 
     private long lastHistoryLogTime = 0;
     private static final long LOG_INTERVAL_MS = 60000; // Log real data at most once per minute
@@ -51,14 +62,26 @@ public class DashboardActivity extends AppCompatActivity {
         // Initialize UI Elements
         tvUserName = findViewById(R.id.tvUserName);
         tvLastUpdated = findViewById(R.id.tvLastUpdated);
+        tvNotificationBadge = findViewById(R.id.tvNotificationBadge);
+        tvNoRecentAlerts = findViewById(R.id.tvNoRecentAlerts);
         tvSoilMoisture = findViewById(R.id.tvSoilMoisture);
+
+        RecyclerView rvRecentAlerts = findViewById(R.id.rvRecentAlerts);
+        rvRecentAlerts.setLayoutManager(new LinearLayoutManager(this));
+        recentAlerts = new ArrayList<>();
+        alertsAdapter = new NotificationAdapter(recentAlerts, this::handleAlertClick);
+        rvRecentAlerts.setAdapter(alertsAdapter);
+
+        findViewById(R.id.btnViewAllNotifications).setOnClickListener(v -> startActivity(new Intent(this, NotificationsActivity.class)));
         tvSoilMoistureStatus = findViewById(R.id.tvSoilMoistureStatus);
         tvWaterTank = findViewById(R.id.tvWaterTank);
+        tvWaterTankStatus = findViewById(R.id.tvWaterTankStatus);
         tvWaterTank.setText("Loading...");
         tvTemperature = findViewById(R.id.tvTemperature);
         tvHumidity = findViewById(R.id.tvHumidity);
         tvHumidityStatus = findViewById(R.id.tvHumidityStatus);
         tvLightIntensity = findViewById(R.id.tvLightIntensity);
+        tvLightIntensityStatus = findViewById(R.id.tvLightIntensityStatus);
 
         pbSoilMoisture = findViewById(R.id.pbSoilMoisture);
         pbWaterTank = findViewById(R.id.pbWaterTank);
@@ -82,8 +105,104 @@ public class DashboardActivity extends AppCompatActivity {
 
         setupBottomNavigation();
 
-        // Logout Button Listener
+        // Notification Button Listener
+        findViewById(R.id.btnNotifications).setOnClickListener(v -> startActivity(new Intent(this, NotificationsActivity.class)));
+
         findViewById(R.id.btnLogout).setOnClickListener(v -> showLogoutConfirmation());
+
+        // Instant Log Button (Hidden, click AgriFlow logo 5 times)
+        final int[] logoClicks = {0};
+        findViewById(R.id.tvAppName).setOnClickListener(v -> {
+            logoClicks[0]++;
+            if (logoClicks[0] >= 5) {
+                logoClicks[0] = 0;
+                forceLogToHistory();
+            }
+        });
+        
+        startNotificationListener();
+        requestNotificationPermission();
+    }
+
+    private void requestNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+    }
+
+    private void startNotificationListener() {
+        if (mAuth.getCurrentUser() != null) {
+            notificationListener = db.collection("notifications")
+                    .whereEqualTo("userId", mAuth.getCurrentUser().getUid())
+                    .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                    .limit(3)
+                    .addSnapshotListener((snapshots, e) -> {
+                        if (e != null) {
+                            android.util.Log.e("AgriFlow", "Notification listen failed", e);
+                            return;
+                        }
+                        if (snapshots != null) {
+                            recentAlerts.clear();
+                            int unreadCount = 0;
+                            for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snapshots) {
+                                NotificationRecord record = doc.toObject(NotificationRecord.class);
+                                record.setId(doc.getId());
+                                recentAlerts.add(record);
+                                if (!record.isRead()) unreadCount++;
+                            }
+                            alertsAdapter.notifyDataSetChanged();
+                            tvNoRecentAlerts.setVisibility(recentAlerts.isEmpty() ? View.VISIBLE : View.GONE);
+                            
+                            // For badge, we might want a separate query or just use the limit for now
+                            // Requirement says "unread notifications exist", usually means total unread.
+                            // I'll add a separate unread count listener for the badge specifically to be accurate.
+                            updateUnreadBadge();
+                        }
+                    });
+        }
+    }
+
+    private void updateUnreadBadge() {
+        db.collection("notifications")
+                .whereEqualTo("userId", mAuth.getCurrentUser().getUid())
+                .whereEqualTo("read", false)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int count = queryDocumentSnapshots.size();
+                    if (count > 0) {
+                        tvNotificationBadge.setText(String.valueOf(count));
+                        tvNotificationBadge.setVisibility(View.VISIBLE);
+                    } else {
+                        tvNotificationBadge.setVisibility(View.GONE);
+                    }
+                });
+    }
+
+    private void handleAlertClick(NotificationRecord notification) {
+        if (!notification.isRead()) {
+            db.collection("notifications").document(notification.getId()).update("read", true);
+        }
+        // Requirement: Navigate to Dashboard (Already here) or specific page
+    }
+
+    private void forceLogToHistory() {
+        Toast.makeText(this, "TRYING TO CREATE 'History' COLLECTION...", Toast.LENGTH_SHORT).show();
+        
+        // Use hardcoded values for a guaranteed write test
+        com.google.firebase.Timestamp now = com.google.firebase.Timestamp.now();
+        HistoryRecord testRecord = new HistoryRecord("waterlevel", 10.0, "%", "Test Zone", "Force Log", now);
+        
+        db.collection("History").add(testRecord)
+            .addOnSuccessListener(documentReference -> {
+                Toast.makeText(this, "SUCCESS! 'History' table created.", Toast.LENGTH_LONG).show();
+                android.util.Log.d("AgriFlow", "Force Log Success: " + documentReference.getId());
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(this, "FAILED: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                android.util.Log.e("AgriFlow", "Force Log Failed", e);
+            });
     }
 
     private void setupBottomNavigation() {
@@ -130,6 +249,11 @@ public class DashboardActivity extends AppCompatActivity {
                                 String firstName = fullName.split(" ")[0];
                                 tvUserName.setText(firstName);
                                 tvUserName.setVisibility(android.view.View.VISIBLE);
+                            }
+
+                            String location = documentSnapshot.getString("farmLocation");
+                            if (location != null) {
+                                farmLocation = location;
                             }
                             
                             updateBottomNavigationForRole(role);
@@ -256,7 +380,7 @@ public class DashboardActivity extends AppCompatActivity {
                             // Log all sensors to history if interval passed
                             long currentTime = System.currentTimeMillis();
                             if (currentTime - lastHistoryLogTime >= LOG_INTERVAL_MS) {
-                                logAllSensorsToHistory(moisture, temp, hum, light);
+                                logAllSensorsToHistory(moisture, temp, hum, light, tank);
                                 lastHistoryLogTime = currentTime;
                             }
                         }
@@ -264,8 +388,17 @@ public class DashboardActivity extends AppCompatActivity {
                         if (tank != null) {
                             tvWaterTank.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", tank));
                             pbWaterTank.setProgress(tank.intValue());
+
+                            TelemetryUtils.StatusInfo status = TelemetryUtils.getWaterLevelClassification(tank);
+                            tvWaterTankStatus.setText(status.label);
+                            tvWaterTankStatus.setTextColor(status.color);
+
+                            // Trigger Notification Check
+                            AppNotificationManager.getInstance(DashboardActivity.this).evaluateWaterLevel(tank, farmLocation);
                         } else {
                             tvWaterTank.setText("N/A");
+                            tvWaterTankStatus.setText("Water level unavailable");
+                            tvWaterTankStatus.setTextColor(android.graphics.Color.GRAY);
                         }
 
                         if (temp != null) {
@@ -280,6 +413,18 @@ public class DashboardActivity extends AppCompatActivity {
                         if (light != null) {
                             tvLightIntensity.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", light));
                             pbLightIntensity.setProgress(light.intValue());
+                            
+                            // Update Status Label
+                            if (light > TelemetryUtils.SUNLIGHT_EXCESSIVE_THRESHOLD) {
+                                tvLightIntensityStatus.setText("Excessive Sunlight");
+                                tvLightIntensityStatus.setTextColor(android.graphics.Color.parseColor("#E53935")); // Red
+                            } else {
+                                tvLightIntensityStatus.setText("Normal Light");
+                                tvLightIntensityStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.primary_dark_green));
+                            }
+                            
+                            // Trigger Sunlight Notification Check
+                            AppNotificationManager.getInstance(DashboardActivity.this).evaluateLightIntensity(light, farmLocation);
                         }
                         
                         updateLastUpdated();
@@ -321,25 +466,28 @@ public class DashboardActivity extends AppCompatActivity {
         );
     }
 
-    private void logAllSensorsToHistory(Double moisture, Double temp, Double hum, Double light) {
+    private void logAllSensorsToHistory(Double moisture, Double temp, Double hum, Double light, Double tank) {
         com.google.firebase.Timestamp now = com.google.firebase.Timestamp.now();
         if (moisture != null) {
-            db.collection("moisture_history").add(new HistoryRecord("moisture", moisture, "%%", "Prototype Zone", "ESP32-S1", now));
+            db.collection("History").add(new HistoryRecord("moisture", moisture, "%", "Prototype Zone", "ESP32-S1", now));
         }
         if (temp != null) {
-            db.collection("moisture_history").add(new HistoryRecord("temperature", temp, "°C", "Prototype Zone", "ESP32-S1", now));
+            db.collection("History").add(new HistoryRecord("temperature", temp, "°C", "Prototype Zone", "ESP32-S1", now));
         }
         if (hum != null) {
-            db.collection("moisture_history").add(new HistoryRecord("humidity", hum, "%%", "Prototype Zone", "ESP32-S1", now));
+            db.collection("History").add(new HistoryRecord("humidity", hum, "%", "Prototype Zone", "ESP32-S1", now));
         }
         if (light != null) {
-            db.collection("moisture_history").add(new HistoryRecord("light", light, "%%", "Prototype Zone", "ESP32-S1", now));
+            db.collection("History").add(new HistoryRecord("light", light, "%", "Prototype Zone", "ESP32-S1", now));
+        }
+        if (tank != null) {
+            db.collection("History").add(new HistoryRecord("waterlevel", tank, "%", "Prototype Zone", "ESP32-S1", now));
         }
     }
 
     private void logMoistureToHistory(double moisture) {
-        HistoryRecord record = new HistoryRecord("moisture", moisture, "%%", "Prototype Zone", "ESP32-S1", com.google.firebase.Timestamp.now());
-        db.collection("moisture_history").add(record)
+        HistoryRecord record = new HistoryRecord("moisture", moisture, "%", "Prototype Zone", "ESP32-S1", com.google.firebase.Timestamp.now());
+        db.collection("History").add(record)
                 .addOnFailureListener(e -> android.util.Log.e("AgriFlow", "Failed to log auto history", e));
     }
 
@@ -348,6 +496,9 @@ public class DashboardActivity extends AppCompatActivity {
         super.onDestroy();
         if (telemetryListener != null) {
             telemetryListener.remove();
+        }
+        if (notificationListener != null) {
+            notificationListener.remove();
         }
     }
 

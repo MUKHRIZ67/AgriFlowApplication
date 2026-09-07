@@ -2,32 +2,47 @@ package com.example.agriflowapplication;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AdminDashboardActivity extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    private TextView tvUserName, tvLastUpdated;
-    private ListenerRegistration telemetryListener;
+    private TextView tvUserName, tvLastUpdated, tvNotificationBadge;
+    private ListenerRegistration telemetryListener, notificationListener;
+    private NotificationAdapter alertsAdapter;
+    private List<NotificationRecord> recentAlerts;
+    private View tvNoRecentAlerts;
 
     // Telemetry Views
-    private TextView tvSoilMoisture, tvSoilMoistureStatus, tvWaterTank, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity;
-    private android.widget.ProgressBar pbSoilMoisture, pbWaterTank, pbHumidity, pbLightIntensity;
-    private android.view.View vTempIndicator;
-    private com.google.android.material.materialswitch.MaterialSwitch switchWaterPump, switchFertilizerPump;
+    private TextView tvSoilMoisture, tvSoilMoistureStatus, tvWaterTank, tvWaterTankStatus, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity, tvLightIntensityStatus;
+    private ProgressBar pbSoilMoisture, pbWaterTank, pbHumidity, pbLightIntensity;
+    private View vTempIndicator;
+    private MaterialSwitch switchWaterPump, switchFertilizerPump;
+    private String farmLocation = "Admin Terminal";
 
     private long lastHistoryLogTime = 0;
     private static final long LOG_INTERVAL_MS = 60000;
@@ -48,14 +63,26 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         tvUserName = findViewById(R.id.tvUserName);
         tvLastUpdated = findViewById(R.id.tvLastUpdated);
+        tvNotificationBadge = findViewById(R.id.tvNotificationBadge);
+        tvNoRecentAlerts = findViewById(R.id.tvNoRecentAlerts);
         tvSoilMoisture = findViewById(R.id.tvSoilMoisture);
+
+        RecyclerView rvRecentAlerts = findViewById(R.id.rvRecentAlerts);
+        rvRecentAlerts.setLayoutManager(new LinearLayoutManager(this));
+        recentAlerts = new ArrayList<>();
+        alertsAdapter = new NotificationAdapter(recentAlerts, this::handleAlertClick);
+        rvRecentAlerts.setAdapter(alertsAdapter);
+
+        findViewById(R.id.btnViewAllNotifications).setOnClickListener(v -> startActivity(new Intent(this, NotificationsActivity.class)));
         tvSoilMoistureStatus = findViewById(R.id.tvSoilMoistureStatus);
         tvWaterTank = findViewById(R.id.tvWaterTank);
+        tvWaterTankStatus = findViewById(R.id.tvWaterTankStatus);
         tvWaterTank.setText("Loading...");
         tvTemperature = findViewById(R.id.tvTemperature);
         tvHumidity = findViewById(R.id.tvHumidity);
         tvHumidityStatus = findViewById(R.id.tvHumidityStatus);
         tvLightIntensity = findViewById(R.id.tvLightIntensity);
+        tvLightIntensityStatus = findViewById(R.id.tvLightIntensityStatus);
 
         pbSoilMoisture = findViewById(R.id.pbSoilMoisture);
         pbWaterTank = findViewById(R.id.pbWaterTank);
@@ -79,17 +106,19 @@ public class AdminDashboardActivity extends AppCompatActivity {
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.nav_home);
 
+        // Notification Button Listener
+        findViewById(R.id.btnNotifications).setOnClickListener(v -> startActivity(new Intent(this, NotificationsActivity.class)));
+
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
                 return true;
             } else if (itemId == R.id.nav_history) {
-                startActivity(new Intent(AdminDashboardActivity.this, MoistureHistoryActivity.class));
+                Intent intent = new Intent(AdminDashboardActivity.this, MoistureHistoryActivity.class);
+                intent.putExtra("is_admin", true);
+                startActivity(intent);
                 overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
                 finish();
-                return true;
-            } else if (itemId == R.id.nav_schedule) {
-                Toast.makeText(this, "Coming Soon!", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (itemId == R.id.nav_manage) {
                 startActivity(new Intent(AdminDashboardActivity.this, FarmerListActivity.class));
@@ -107,6 +136,57 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         // Logout
         findViewById(R.id.btnLogout).setOnClickListener(v -> showLogoutConfirmation());
+        
+        startNotificationListener();
+    }
+
+    private void startNotificationListener() {
+        if (mAuth.getCurrentUser() != null) {
+            notificationListener = db.collection("notifications")
+                    .whereEqualTo("userId", mAuth.getCurrentUser().getUid())
+                    .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                    .limit(3)
+                    .addSnapshotListener((snapshots, e) -> {
+                        if (e != null) {
+                            android.util.Log.e("AgriFlow", "Notification listen failed", e);
+                            return;
+                        }
+                        if (snapshots != null) {
+                            recentAlerts.clear();
+                            for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snapshots) {
+                                NotificationRecord record = doc.toObject(NotificationRecord.class);
+                                record.setId(doc.getId());
+                                recentAlerts.add(record);
+                            }
+                            alertsAdapter.notifyDataSetChanged();
+                            tvNoRecentAlerts.setVisibility(recentAlerts.isEmpty() ? View.VISIBLE : View.GONE);
+                            updateUnreadBadge();
+                        }
+                    });
+        }
+    }
+
+    private void updateUnreadBadge() {
+        if (mAuth.getCurrentUser() == null) return;
+        db.collection("notifications")
+                .whereEqualTo("userId", mAuth.getCurrentUser().getUid())
+                .whereEqualTo("read", false)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int count = queryDocumentSnapshots.size();
+                    if (count > 0) {
+                        tvNotificationBadge.setText(String.valueOf(count));
+                        tvNotificationBadge.setVisibility(View.VISIBLE);
+                    } else {
+                        tvNotificationBadge.setVisibility(View.GONE);
+                    }
+                });
+    }
+
+    private void handleAlertClick(NotificationRecord notification) {
+        if (!notification.isRead()) {
+            db.collection("notifications").document(notification.getId()).update("read", true);
+        }
     }
 
     private void startTelemetryListener() {
@@ -121,6 +201,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
                     if (snapshot != null && snapshot.exists()) {
                         android.util.Log.d("AgriFlow_Debug", "Admin New Data Received: " + snapshot.getData());
+                        
+                        // Use a safe way to get numbers (handles both Long and Double from Firestore)
                         Double moisture = getSafeDouble(snapshot, "soilMoisture");
                         Double tank = getSafeDouble(snapshot, "waterTankLevel");
                         if (tank == null) tank = getSafeDouble(snapshot, "water_level");
@@ -143,7 +225,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
                             // Log all sensors to history if interval passed
                             long currentTime = System.currentTimeMillis();
                             if (currentTime - lastHistoryLogTime >= LOG_INTERVAL_MS) {
-                                logAllSensorsToHistory(moisture, temp, hum, light);
+                                logAllSensorsToHistory(moisture, temp, hum, light, tank);
                                 lastHistoryLogTime = currentTime;
                             }
                         }
@@ -151,8 +233,17 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         if (tank != null) {
                             tvWaterTank.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", tank));
                             pbWaterTank.setProgress(tank.intValue());
+
+                            TelemetryUtils.StatusInfo status = TelemetryUtils.getWaterLevelClassification(tank);
+                            tvWaterTankStatus.setText(status.label);
+                            tvWaterTankStatus.setTextColor(status.color);
+
+                            // Trigger Notification Check
+                            AppNotificationManager.getInstance(AdminDashboardActivity.this).evaluateWaterLevel(tank, farmLocation);
                         } else {
                             tvWaterTank.setText("N/A");
+                            tvWaterTankStatus.setText("Live water-level data is unavailable");
+                            tvWaterTankStatus.setTextColor(android.graphics.Color.GRAY);
                         }
 
                         if (temp != null) {
@@ -167,6 +258,18 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         if (light != null) {
                             tvLightIntensity.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", light));
                             pbLightIntensity.setProgress(light.intValue());
+                            
+                            // Update Status Label
+                            if (light > TelemetryUtils.SUNLIGHT_EXCESSIVE_THRESHOLD) {
+                                tvLightIntensityStatus.setText("Excessive Sunlight");
+                                tvLightIntensityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_error));
+                            } else {
+                                tvLightIntensityStatus.setText("Normal Light");
+                                tvLightIntensityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_success));
+                            }
+                            
+                            // Trigger Sunlight Notification Check
+                            AppNotificationManager.getInstance(AdminDashboardActivity.this).evaluateLightIntensity(light, farmLocation);
                         }
                         
                         updateLastUpdated();
@@ -190,7 +293,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         setupPumpListeners();
     }
 
-    private Double getSafeDouble(com.google.firebase.firestore.DocumentSnapshot snapshot, String field) {
+    private Double getSafeDouble(DocumentSnapshot snapshot, String field) {
         Object val = snapshot.get(field);
         if (val instanceof Number) {
             return ((Number) val).doubleValue();
@@ -213,26 +316,26 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private void updateHumidityStatus(double humidity) {
         if (humidity < 40) {
             tvHumidityStatus.setText("Low");
-            tvHumidityStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_warning));
+            tvHumidityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_warning));
         } else if (humidity <= 70) {
             tvHumidityStatus.setText("Normal");
-            tvHumidityStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_success));
+            tvHumidityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_success));
         } else {
             tvHumidityStatus.setText("High");
-            tvHumidityStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_secondary));
+            tvHumidityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_secondary));
         }
     }
 
     private void updateSoilMoistureStatus(double moisture) {
         if (moisture <= 30) {
             tvSoilMoistureStatus.setText("Dry");
-            tvSoilMoistureStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_error));
+            tvSoilMoistureStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_error));
         } else if (moisture <= 70) {
             tvSoilMoistureStatus.setText("Moderate");
-            tvSoilMoistureStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_warning));
+            tvSoilMoistureStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_warning));
         } else {
             tvSoilMoistureStatus.setText("Wet");
-            tvSoilMoistureStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_success));
+            tvSoilMoistureStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_success));
         }
     }
 
@@ -240,7 +343,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault());
         String currentTime = sdf.format(new java.util.Date());
         tvLastUpdated.setText("Last updated: " + currentTime);
-        tvLastUpdated.setVisibility(android.view.View.VISIBLE);
+        tvLastUpdated.setVisibility(View.VISIBLE);
     }
 
     private void setupPumpListeners() {
@@ -253,25 +356,28 @@ public class AdminDashboardActivity extends AppCompatActivity {
         );
     }
 
-    private void logAllSensorsToHistory(Double moisture, Double temp, Double hum, Double light) {
+    private void logAllSensorsToHistory(Double moisture, Double temp, Double hum, Double light, Double tank) {
         com.google.firebase.Timestamp now = com.google.firebase.Timestamp.now();
         if (moisture != null) {
-            db.collection("moisture_history").add(new HistoryRecord("moisture", moisture, "%%", "Prototype Zone", "Admin Terminal", now));
+            db.collection("History").add(new HistoryRecord("moisture", moisture, "%", "Prototype Zone", "Admin Terminal", now));
         }
         if (temp != null) {
-            db.collection("moisture_history").add(new HistoryRecord("temperature", temp, "°C", "Prototype Zone", "Admin Terminal", now));
+            db.collection("History").add(new HistoryRecord("temperature", temp, "°C", "Prototype Zone", "Admin Terminal", now));
         }
         if (hum != null) {
-            db.collection("moisture_history").add(new HistoryRecord("humidity", hum, "%%", "Prototype Zone", "Admin Terminal", now));
+            db.collection("History").add(new HistoryRecord("humidity", hum, "%", "Prototype Zone", "Admin Terminal", now));
         }
         if (light != null) {
-            db.collection("moisture_history").add(new HistoryRecord("light", light, "%%", "Prototype Zone", "Admin Terminal", now));
+            db.collection("History").add(new HistoryRecord("light", light, "%", "Prototype Zone", "Admin Terminal", now));
+        }
+        if (tank != null) {
+            db.collection("History").add(new HistoryRecord("waterlevel", tank, "%", "Prototype Zone", "Admin Terminal", now));
         }
     }
 
     private void logMoistureToHistory(double moisture) {
-        HistoryRecord record = new HistoryRecord("moisture", moisture, "%%", "Prototype Zone", "Admin Terminal", com.google.firebase.Timestamp.now());
-        db.collection("moisture_history").add(record)
+        HistoryRecord record = new HistoryRecord("moisture", moisture, "%", "Prototype Zone", "Admin Terminal", com.google.firebase.Timestamp.now());
+        db.collection("History").add(record)
                 .addOnFailureListener(e -> android.util.Log.e("AgriFlow", "Failed to log admin auto history", e));
     }
 
@@ -280,6 +386,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         super.onDestroy();
         if (telemetryListener != null) {
             telemetryListener.remove();
+        }
+        if (notificationListener != null) {
+            notificationListener.remove();
         }
     }
 
@@ -293,6 +402,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
                             if (fullName != null && !fullName.isEmpty()) {
                                 String firstName = fullName.split(" ")[0];
                                 tvUserName.setText(firstName);
+                            }
+                            
+                            String location = documentSnapshot.getString("farmLocation");
+                            if (location != null) {
+                                farmLocation = location;
                             }
                         }
                     });

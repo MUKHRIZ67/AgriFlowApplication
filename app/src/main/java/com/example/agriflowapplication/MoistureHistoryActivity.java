@@ -54,7 +54,14 @@ public class MoistureHistoryActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_moisture_history);
+
+        boolean isAdmin = getIntent().getBooleanExtra("is_admin", false);
+        if (isAdmin) {
+            setTheme(R.style.Theme_AgriFlow_Admin);
+            setContentView(R.layout.activity_admin_history);
+        } else {
+            setContentView(R.layout.activity_moisture_history);
+        }
 
         db = FirebaseManager.getInstance().getDb();
         
@@ -100,6 +107,43 @@ public class MoistureHistoryActivity extends AppCompatActivity {
         loadHistory();
 
         findViewById(R.id.btnRetry).setOnClickListener(v -> loadHistory());
+        
+        // One-time Migration Helper (hidden long press on refresh icon)
+        toolbar.setOnLongClickListener(v -> {
+            showMigrationDialog();
+            return true;
+        });
+    }
+
+    private void showMigrationDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Data Migration")
+                .setMessage("Do you want to migrate data from 'moisture_history' to 'History'?")
+                .setPositiveButton("Migrate", (dialog, which) -> startMigration())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void startMigration() {
+        Toast.makeText(this, "Migration started...", Toast.LENGTH_SHORT).show();
+        db.collection("moisture_history").get().addOnSuccessListener(queryDocumentSnapshots -> {
+            if (queryDocumentSnapshots.isEmpty()) {
+                Toast.makeText(this, "No old data found", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            com.google.firebase.firestore.WriteBatch batch = db.batch();
+            for (com.google.firebase.firestore.QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                batch.set(db.collection("History").document(doc.getId()), doc.getData());
+            }
+            
+            batch.commit().addOnSuccessListener(aVoid -> {
+                Toast.makeText(this, "Migration successful! Restarting...", Toast.LENGTH_LONG).show();
+                loadHistory();
+            }).addOnFailureListener(e -> {
+                Toast.makeText(this, "Migration failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            });
+        });
     }
 
     private void setupFilters() {
@@ -110,6 +154,7 @@ public class MoistureHistoryActivity extends AppCompatActivity {
             else if (id == R.id.chipTemperature) selectedSensorType = "temperature";
             else if (id == R.id.chipHumidity) selectedSensorType = "humidity";
             else if (id == R.id.chipLight) selectedSensorType = "light";
+            else if (id == R.id.chipWaterLevel) selectedSensorType = "waterlevel";
             loadHistory();
         });
 
@@ -152,7 +197,7 @@ public class MoistureHistoryActivity extends AppCompatActivity {
     private void loadHistory() {
         showState("loading");
 
-        Query query = db.collection("moisture_history")
+        Query query = db.collection("History")
                 .whereEqualTo("sensorType", selectedSensorType);
 
         if (startDate != null) {
@@ -238,6 +283,7 @@ public class MoistureHistoryActivity extends AppCompatActivity {
             case "temperature": resId = R.string.empty_temperature; break;
             case "humidity": resId = R.string.empty_humidity; break;
             case "light": resId = R.string.empty_light; break;
+            case "waterlevel": resId = R.string.empty_water_level; break;
             default: resId = R.string.empty_moisture; break;
         }
         tvEmptyState.setText(resId);
@@ -337,24 +383,11 @@ public class MoistureHistoryActivity extends AppCompatActivity {
     }
 
     private void checkUserRoleAndApplyTheme() {
-        String userId = FirebaseAuth.getInstance().getUid();
-        if (userId != null) {
-            db.collection("users").document(userId).get().addOnSuccessListener(doc -> {
-                if (doc.exists() && "admin".equalsIgnoreCase(doc.getString("role"))) applyAdminTheme();
-            });
-        }
+        // Theme is now handled immediately in onCreate via Intent extra to avoid flicker
     }
 
     private void applyAdminTheme() {
-        findViewById(R.id.main_layout).setBackgroundColor(ContextCompat.getColor(this, R.color.iot_bg));
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.iot_bg));
-        toolbar.setTitleTextColor(ContextCompat.getColor(this, R.color.iot_on_surface));
-        
-        BottomNavigationView bnv = findViewById(R.id.bottom_navigation);
-        bnv.getMenu().clear();
-        bnv.inflateMenu(R.menu.admin_bottom_nav_menu);
-        bnv.setSelectedItemId(R.id.nav_history);
+        // Theme is now handled immediately in onCreate via Intent extra to avoid flicker
     }
 
     private void setupBottomNavigation() {
@@ -363,30 +396,39 @@ public class MoistureHistoryActivity extends AppCompatActivity {
         bnv.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_history) return true;
-            if (id == R.id.nav_home) navigateHome();
-            else if (id == R.id.nav_profile) navigateProfile();
-            else if (id == R.id.nav_manage) startActivity(new Intent(this, FarmerListActivity.class));
-            return true;
+            if (id == R.id.nav_home) {
+                navigateHome();
+                return true;
+            } else if (id == R.id.nav_profile) {
+                navigateProfile();
+                return true;
+            } else if (id == R.id.nav_manage) {
+                startActivity(new Intent(this, FarmerListActivity.class));
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                finish();
+                return true;
+            }
+            return false;
         });
     }
 
     private void navigateHome() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
-        db.collection("users").document(uid).get().addOnSuccessListener(doc -> {
-            Intent intent = new Intent(this, "admin".equalsIgnoreCase(doc.getString("role")) ? AdminDashboardActivity.class : DashboardActivity.class);
-            startActivity(intent);
-            finish();
-        });
+        boolean isAdmin = getIntent().getBooleanExtra("is_admin", false);
+        Intent intent = new Intent(this, isAdmin ? AdminDashboardActivity.class : DashboardActivity.class);
+        startActivity(intent);
+        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+        finish();
     }
 
     private void navigateProfile() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
-        db.collection("users").document(uid).get().addOnSuccessListener(doc -> {
-            Intent intent = new Intent(this, "admin".equalsIgnoreCase(doc.getString("role")) ? AdminProfileActivity.class : ProfileActivity.class);
-            startActivity(intent);
-            finish();
-        });
+        boolean isAdmin = getIntent().getBooleanExtra("is_admin", false);
+        Intent intent = new Intent(this, isAdmin ? AdminProfileActivity.class : ProfileActivity.class);
+        startActivity(intent);
+        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+        finish();
     }
 }

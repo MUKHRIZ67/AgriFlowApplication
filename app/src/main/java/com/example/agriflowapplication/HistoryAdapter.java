@@ -71,6 +71,10 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
                 holder.ivSensorIcon.setImageResource(android.R.drawable.ic_menu_day);
                 holder.ivSensorIcon.setColorFilter(Color.parseColor("#FBC02D"));
                 break;
+            case "waterlevel":
+                holder.ivSensorIcon.setImageResource(android.R.drawable.ic_menu_save);
+                holder.ivSensorIcon.setColorFilter(Color.parseColor("#1E88E5"));
+                break;
             default: // moisture
                 holder.ivSensorIcon.setImageResource(android.R.drawable.ic_menu_gallery);
                 holder.ivSensorIcon.setColorFilter(Color.parseColor("#64B5F6"));

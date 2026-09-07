@@ -24,7 +24,7 @@ public class HistoryDataMocker {
             String unit = "temperature".equals(type) ? "°C" : "%%";
             
             HistoryRecord record = new HistoryRecord(type, value, unit, "Prototype Zone", "Mock-ESP32", new Timestamp(calendar.getTime()));
-            batch.set(db.collection("moisture_history").document(), record);
+            batch.set(db.collection("History").document(), record);
         }
 
         batch.commit();
