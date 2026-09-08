@@ -340,6 +340,18 @@
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toBottomOf="@id/labelTemperature" />
 
+                        <TextView
+                            android:id="@+id/tvTemperatureStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Normal"
+                            android:textColor="@color/iot_success"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/tvTemperature" />
+
                         <View
                             android:id="@+id/vTempBar"
                             android:layout_width="0dp"
@@ -348,7 +360,7 @@
                             android:background="@drawable/temp_gradient"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/tvTemperature" />
+                            app:layout_constraintTop_toBottomOf="@id/tvTemperatureStatus" />
 
                         <View
                             android:id="@+id/vTempIndicator"

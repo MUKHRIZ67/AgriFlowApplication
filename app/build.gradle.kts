@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.firebase.database)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
     implementation(libs.firebase.auth)
     implementation(libs.material)
     implementation(libs.mpandroidchart)

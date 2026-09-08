@@ -14,16 +14,15 @@ public class TelemetryUtils {
         }
     }
 
-    public static final double WATER_LOW_THRESHOLD = 40.0;
-    private static final double WATER_CRITICAL_THRESHOLD = 20.0;
-    public static final double SUNLIGHT_EXCESSIVE_THRESHOLD = 80.0;
+    public static final double WATER_LOW_THRESHOLD = SensorAlertConstants.WATER_WARNING_LOW;
+    private static final double WATER_CRITICAL_THRESHOLD = SensorAlertConstants.WATER_CRITICAL_LOW;
+    public static final double SUNLIGHT_EXCESSIVE_THRESHOLD = SensorAlertConstants.LIGHT_WARNING_HIGH;
 
     /**
      * Thresholds for Water Level Classification:
-     * 0%–20%: Critical Low (Red)
-     * 21%–40%: Low / Refill Recommended (Amber/Orange)
-     * 41%–85%: Normal / Optimal (Green)
-     * 86%–100%: High / Nearly Full (Blue)
+     * Critical Low: <= 20%
+     * Low: <= 40%
+     * Normal: > 40%
      */
     public static StatusInfo getWaterLevelClassification(double percentage) {
         if (percentage < 0) {
@@ -37,10 +36,8 @@ public class TelemetryUtils {
             return new StatusInfo("Critical Low", Color.parseColor("#E53935")); // Red
         } else if (p <= WATER_LOW_THRESHOLD) {
             return new StatusInfo("Low / Refill Recommended", Color.parseColor("#FB8C00")); // Orange/Amber
-        } else if (p <= 85) {
-            return new StatusInfo("Normal / Optimal", Color.parseColor("#43A047")); // Green
         } else {
-            return new StatusInfo("High / Nearly Full", Color.parseColor("#1E88E5")); // Blue
+            return new StatusInfo("Normal / Optimal", Color.parseColor("#43A047")); // Green
         }
     }
 }

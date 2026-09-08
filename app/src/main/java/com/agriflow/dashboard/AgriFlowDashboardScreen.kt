@@ -461,10 +461,10 @@ private fun TelemetryGrid(telemetry: TelemetryState) {
             modifier = Modifier.fillMaxWidth()
         ) {
             val moisture = telemetry.soilMoisturePercent
-            val (status, statusColor) = when {
-                moisture <= 30 -> "Dry" to colors.onErrorContainer
-                moisture <= 70 -> "Moderate" to colors.onWarningContainer
-                else -> "Wet" to colors.primary
+            val (moistureStatus, moistureStatusColor) = when {
+                moisture < 25 -> "Critical Dry" to colors.onErrorContainer
+                moisture <= 40 -> "Dry/Moderate" to colors.onWarningContainer
+                else -> "Normal" to colors.primary
             }
             
             RingMetricCard(
@@ -472,47 +472,85 @@ private fun TelemetryGrid(telemetry: TelemetryState) {
                 icon = Icons.Filled.WaterDrop,
                 label = "Soil moisture",
                 value = moisture,
-                isWarning = moisture < 15,
-                status = status,
-                statusColor = statusColor
+                isWarning = moisture < 25,
+                status = moistureStatus,
+                statusColor = moistureStatusColor
             )
+
+            val tank = telemetry.waterTankPercent
+            val (tankStatus, tankStatusColor) = when {
+                tank < 20 -> "Critical Low" to colors.onErrorContainer
+                tank <= 40 -> "Low" to colors.onWarningContainer
+                else -> "Normal" to colors.primary
+            }
+
             RingMetricCard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Filled.Water,
                 label = "Water tank level",
-                value = telemetry.waterTankPercent,
-                isWarning = telemetry.waterTankPercent < 20
+                value = tank,
+                isWarning = tank < 20,
+                status = tankStatus,
+                statusColor = tankStatusColor
             )
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
+            val temp = telemetry.temperatureCelsius
+            val (tempStatus, tempStatusColor) = when {
+                temp < 15 || temp > 38 -> "Critical" to colors.onErrorContainer
+                temp < 18 || temp > 32 -> "Warning" to colors.onWarningContainer
+                else -> "Normal" to colors.primary
+            }
+
             TemperatureMetricCard(
                 modifier = Modifier.weight(1f),
-                temperatureCelsius = telemetry.temperatureCelsius
+                temperatureCelsius = temp,
+                status = tempStatus,
+                statusColor = tempStatusColor
             )
+
+            val hum = telemetry.humidityPercent
+            val (humStatus, humStatusColor) = when {
+                hum < 30 || hum > 85 -> "Critical" to colors.onErrorContainer
+                hum < 40 || hum > 75 -> "Warning" to colors.onWarningContainer
+                else -> "Normal" to colors.primary
+            }
+
             RingMetricCard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Filled.Cloud,
                 label = "Humidity",
-                value = telemetry.humidityPercent,
-                isWarning = false
+                value = hum,
+                isWarning = hum < 30 || hum > 85,
+                status = humStatus,
+                statusColor = humStatusColor
             )
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
+            val light = telemetry.lightIntensityPercent
+            val (lightStatus, lightStatusColor) = when {
+                light > 95 -> "Extreme" to colors.onErrorContainer
+                light > 85 -> "Excessive" to colors.onWarningContainer
+                else -> "Normal" to colors.primary
+            }
+
             RingMetricCard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Filled.LightMode,
                 label = "Light Intensity (%)",
-                value = telemetry.lightIntensityPercent,
-                isWarning = telemetry.lightIntensityPercent > 80f,
+                value = light,
+                isWarning = light > 95,
                 unit = "%",
                 maxValue = 100f,
-                precision = 0
+                precision = 0,
+                status = lightStatus,
+                statusColor = lightStatusColor
             )
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -639,9 +677,13 @@ private fun TemperatureMetricCard(
     modifier: Modifier = Modifier,
     temperatureCelsius: Float,
     minTemp: Float = 10f,
-    maxTemp: Float = 42f
+    maxTemp: Float = 42f,
+    status: String? = null,
+    statusColor: Color = Color.Unspecified
 ) {
     val colors = LocalDashboardColors.current
+    val finalStatusColor = if (statusColor == Color.Unspecified) colors.onSurfaceVariant else statusColor
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
@@ -669,6 +711,15 @@ private fun TemperatureMetricCard(
                     fontSize = 14.sp,
                     color = colors.onSurfaceVariant,
                     modifier = Modifier.padding(start = 2.dp, bottom = 3.dp)
+                )
+            }
+            if (status != null) {
+                Text(
+                    text = status,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = finalStatusColor,
+                    modifier = Modifier.padding(top = 2.dp)
                 )
             }
             Spacer(Modifier.height(10.dp))

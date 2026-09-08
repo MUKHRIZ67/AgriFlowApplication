@@ -35,7 +35,7 @@ public class DashboardActivity extends AppCompatActivity {
     private View tvNoRecentAlerts;
 
     // Telemetry Views
-    private TextView tvSoilMoisture, tvSoilMoistureStatus, tvWaterTank, tvWaterTankStatus, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity, tvLightIntensityStatus;
+    private TextView tvSoilMoisture, tvSoilMoistureStatus, tvWaterTank, tvWaterTankStatus, tvTemperature, tvTemperatureStatus, tvHumidity, tvHumidityStatus, tvLightIntensity, tvLightIntensityStatus;
     private android.widget.ProgressBar pbSoilMoisture, pbWaterTank, pbHumidity, pbLightIntensity;
     private android.view.View vTempIndicator;
     private com.google.android.material.materialswitch.MaterialSwitch switchWaterPump, switchFertilizerPump;
@@ -78,6 +78,7 @@ public class DashboardActivity extends AppCompatActivity {
         tvWaterTankStatus = findViewById(R.id.tvWaterTankStatus);
         tvWaterTank.setText("Loading...");
         tvTemperature = findViewById(R.id.tvTemperature);
+        tvTemperatureStatus = findViewById(R.id.tvTemperatureStatus);
         tvHumidity = findViewById(R.id.tvHumidity);
         tvHumidityStatus = findViewById(R.id.tvHumidityStatus);
         tvLightIntensity = findViewById(R.id.tvLightIntensity);
@@ -104,6 +105,7 @@ public class DashboardActivity extends AppCompatActivity {
         });
 
         setupBottomNavigation();
+        FirebaseManager.getInstance().updateFcmToken();
 
         // Notification Button Listener
         findViewById(R.id.btnNotifications).setOnClickListener(v -> startActivity(new Intent(this, NotificationsActivity.class)));
@@ -310,28 +312,54 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void updateHumidityStatus(double humidity) {
-        if (humidity < 40) {
-            tvHumidityStatus.setText("Low");
-            tvHumidityStatus.setTextColor(android.graphics.Color.parseColor("#FF8A65")); // Soft Orange
-        } else if (humidity <= 70) {
+        if (humidity < SensorAlertConstants.HUMIDITY_WARNING_LOW) {
+            tvHumidityStatus.setText(humidity < SensorAlertConstants.HUMIDITY_CRITICAL_LOW ? "Critical Low" : "Low");
+            tvHumidityStatus.setTextColor(android.graphics.Color.parseColor(humidity < SensorAlertConstants.HUMIDITY_CRITICAL_LOW ? "#E53935" : "#FF8A65"));
+        } else if (humidity <= SensorAlertConstants.HUMIDITY_WARNING_HIGH) {
             tvHumidityStatus.setText("Normal");
             tvHumidityStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.primary_dark_green));
         } else {
-            tvHumidityStatus.setText("High");
-            tvHumidityStatus.setTextColor(android.graphics.Color.parseColor("#448AFF")); // Soft Blue
+            tvHumidityStatus.setText(humidity > SensorAlertConstants.HUMIDITY_CRITICAL_HIGH ? "Critical High" : "High");
+            tvHumidityStatus.setTextColor(android.graphics.Color.parseColor(humidity > SensorAlertConstants.HUMIDITY_CRITICAL_HIGH ? "#B71C1C" : "#448AFF"));
         }
     }
 
     private void updateSoilMoistureStatus(double moisture) {
-        if (moisture <= 30) {
-            tvSoilMoistureStatus.setText("Dry");
-            tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#E53935"));
-        } else if (moisture <= 70) {
-            tvSoilMoistureStatus.setText("Moderate");
+        if (moisture < SensorAlertConstants.SOIL_CRITICAL_LOW) {
+            tvSoilMoistureStatus.setText("Critical Dry");
+            tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#B71C1C"));
+        } else if (moisture <= SensorAlertConstants.SOIL_WARNING_LOW) {
+            tvSoilMoistureStatus.setText("Dry/Moderate");
             tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#FB8C00"));
         } else {
-            tvSoilMoistureStatus.setText("Wet");
+            tvSoilMoistureStatus.setText("Normal");
             tvSoilMoistureStatus.setTextColor(android.graphics.Color.parseColor("#43A047"));
+        }
+    }
+
+    private void updateTemperatureStatus(double temp) {
+        if (temp < SensorAlertConstants.TEMP_WARNING_LOW) {
+            tvTemperatureStatus.setText(temp < SensorAlertConstants.TEMP_CRITICAL_LOW ? "Critical Low" : "Low");
+            tvTemperatureStatus.setTextColor(android.graphics.Color.parseColor(temp < SensorAlertConstants.TEMP_CRITICAL_LOW ? "#E53935" : "#64B5F6"));
+        } else if (temp <= SensorAlertConstants.TEMP_WARNING_HIGH) {
+            tvTemperatureStatus.setText("Normal");
+            tvTemperatureStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.primary_dark_green));
+        } else {
+            tvTemperatureStatus.setText(temp > SensorAlertConstants.TEMP_CRITICAL_HIGH ? "Critical High" : "High");
+            tvTemperatureStatus.setTextColor(android.graphics.Color.parseColor(temp > SensorAlertConstants.TEMP_CRITICAL_HIGH ? "#B71C1C" : "#FF8A65"));
+        }
+    }
+
+    private void updateLightIntensityStatus(double light) {
+        if (light > SensorAlertConstants.LIGHT_CRITICAL_HIGH) {
+            tvLightIntensityStatus.setText("Extreme Light");
+            tvLightIntensityStatus.setTextColor(android.graphics.Color.parseColor("#B71C1C"));
+        } else if (light > SensorAlertConstants.LIGHT_WARNING_HIGH) {
+            tvLightIntensityStatus.setText("Excessive Light");
+            tvLightIntensityStatus.setTextColor(android.graphics.Color.parseColor("#E53935"));
+        } else {
+            tvLightIntensityStatus.setText("Normal");
+            tvLightIntensityStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.primary_dark_green));
         }
     }
 
@@ -376,7 +404,10 @@ public class DashboardActivity extends AppCompatActivity {
                             tvSoilMoisture.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", moisture));
                             pbSoilMoisture.setProgress(moisture.intValue());
                             updateSoilMoistureStatus(moisture);
-                            
+
+                            // Trigger Alert Check
+                            SensorAlertManager.getInstance(DashboardActivity.this).evaluateSoilMoisture(moisture, farmLocation);
+
                             // Log all sensors to history if interval passed
                             long currentTime = System.currentTimeMillis();
                             if (currentTime - lastHistoryLogTime >= LOG_INTERVAL_MS) {
@@ -394,7 +425,7 @@ public class DashboardActivity extends AppCompatActivity {
                             tvWaterTankStatus.setTextColor(status.color);
 
                             // Trigger Notification Check
-                            AppNotificationManager.getInstance(DashboardActivity.this).evaluateWaterLevel(tank, farmLocation);
+                            SensorAlertManager.getInstance(DashboardActivity.this).evaluateWaterLevel(tank, farmLocation);
                         } else {
                             tvWaterTank.setText("N/A");
                             tvWaterTankStatus.setText("Water level unavailable");
@@ -404,27 +435,27 @@ public class DashboardActivity extends AppCompatActivity {
                         if (temp != null) {
                             tvTemperature.setText(String.format(java.util.Locale.getDefault(), "%.1f°C", temp));
                             updateTemperatureIndicator(temp);
+                            updateTemperatureStatus(temp);
+
+                            // Trigger Alert Check
+                            SensorAlertManager.getInstance(DashboardActivity.this).evaluateTemperature(temp, farmLocation);
                         }
                         if (hum != null) {
                             tvHumidity.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", hum));
                             pbHumidity.setProgress(hum.intValue());
                             updateHumidityStatus(hum);
+
+                            // Trigger Alert Check
+                            SensorAlertManager.getInstance(DashboardActivity.this).evaluateHumidity(hum, farmLocation);
                         }
                         if (light != null) {
                             tvLightIntensity.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", light));
                             pbLightIntensity.setProgress(light.intValue());
                             
-                            // Update Status Label
-                            if (light > TelemetryUtils.SUNLIGHT_EXCESSIVE_THRESHOLD) {
-                                tvLightIntensityStatus.setText("Excessive Sunlight");
-                                tvLightIntensityStatus.setTextColor(android.graphics.Color.parseColor("#E53935")); // Red
-                            } else {
-                                tvLightIntensityStatus.setText("Normal Light");
-                                tvLightIntensityStatus.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.primary_dark_green));
-                            }
+                            updateLightIntensityStatus(light);
                             
                             // Trigger Sunlight Notification Check
-                            AppNotificationManager.getInstance(DashboardActivity.this).evaluateLightIntensity(light, farmLocation);
+                            SensorAlertManager.getInstance(DashboardActivity.this).evaluateLightIntensity(light, farmLocation);
                         }
                         
                         updateLastUpdated();

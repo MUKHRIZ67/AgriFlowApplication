@@ -38,7 +38,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private View tvNoRecentAlerts;
 
     // Telemetry Views
-    private TextView tvSoilMoisture, tvSoilMoistureStatus, tvWaterTank, tvWaterTankStatus, tvTemperature, tvHumidity, tvHumidityStatus, tvLightIntensity, tvLightIntensityStatus;
+    private TextView tvSoilMoisture, tvSoilMoistureStatus, tvWaterTank, tvWaterTankStatus, tvTemperature, tvTemperatureStatus, tvHumidity, tvHumidityStatus, tvLightIntensity, tvLightIntensityStatus;
     private ProgressBar pbSoilMoisture, pbWaterTank, pbHumidity, pbLightIntensity;
     private View vTempIndicator;
     private MaterialSwitch switchWaterPump, switchFertilizerPump;
@@ -79,6 +79,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvWaterTankStatus = findViewById(R.id.tvWaterTankStatus);
         tvWaterTank.setText("Loading...");
         tvTemperature = findViewById(R.id.tvTemperature);
+        tvTemperatureStatus = findViewById(R.id.tvTemperatureStatus);
         tvHumidity = findViewById(R.id.tvHumidity);
         tvHumidityStatus = findViewById(R.id.tvHumidityStatus);
         tvLightIntensity = findViewById(R.id.tvLightIntensity);
@@ -105,6 +106,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         // Bottom Navigation
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.nav_home);
+        FirebaseManager.getInstance().updateFcmToken();
 
         // Notification Button Listener
         findViewById(R.id.btnNotifications).setOnClickListener(v -> startActivity(new Intent(this, NotificationsActivity.class)));
@@ -222,7 +224,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
                             pbSoilMoisture.setProgress(moisture.intValue());
                             updateSoilMoistureStatus(moisture);
 
-                            // Log all sensors to history if interval passed
+                            // Trigger Alert Check
+                            SensorAlertManager.getInstance(AdminDashboardActivity.this).evaluateSoilMoisture(moisture, farmLocation);
+
+                            // Log to history if interval passed
                             long currentTime = System.currentTimeMillis();
                             if (currentTime - lastHistoryLogTime >= LOG_INTERVAL_MS) {
                                 logAllSensorsToHistory(moisture, temp, hum, light, tank);
@@ -239,7 +244,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
                             tvWaterTankStatus.setTextColor(status.color);
 
                             // Trigger Notification Check
-                            AppNotificationManager.getInstance(AdminDashboardActivity.this).evaluateWaterLevel(tank, farmLocation);
+                            SensorAlertManager.getInstance(AdminDashboardActivity.this).evaluateWaterLevel(tank, farmLocation);
                         } else {
                             tvWaterTank.setText("N/A");
                             tvWaterTankStatus.setText("Live water-level data is unavailable");
@@ -249,27 +254,27 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         if (temp != null) {
                             tvTemperature.setText(String.format(java.util.Locale.getDefault(), "%.1f°C", temp));
                             updateTemperatureIndicator(temp);
+                            updateTemperatureStatus(temp);
+
+                            // Trigger Alert Check
+                            SensorAlertManager.getInstance(AdminDashboardActivity.this).evaluateTemperature(temp, farmLocation);
                         }
                         if (hum != null) {
                             tvHumidity.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", hum));
                             pbHumidity.setProgress(hum.intValue());
                             updateHumidityStatus(hum);
+
+                            // Trigger Alert Check
+                            SensorAlertManager.getInstance(AdminDashboardActivity.this).evaluateHumidity(hum, farmLocation);
                         }
                         if (light != null) {
                             tvLightIntensity.setText(String.format(java.util.Locale.getDefault(), "%.0f%%", light));
                             pbLightIntensity.setProgress(light.intValue());
                             
-                            // Update Status Label
-                            if (light > TelemetryUtils.SUNLIGHT_EXCESSIVE_THRESHOLD) {
-                                tvLightIntensityStatus.setText("Excessive Sunlight");
-                                tvLightIntensityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_error));
-                            } else {
-                                tvLightIntensityStatus.setText("Normal Light");
-                                tvLightIntensityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_success));
-                            }
+                            updateLightIntensityStatus(light);
                             
                             // Trigger Sunlight Notification Check
-                            AppNotificationManager.getInstance(AdminDashboardActivity.this).evaluateLightIntensity(light, farmLocation);
+                            SensorAlertManager.getInstance(AdminDashboardActivity.this).evaluateLightIntensity(light, farmLocation);
                         }
                         
                         updateLastUpdated();
@@ -314,28 +319,54 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void updateHumidityStatus(double humidity) {
-        if (humidity < 40) {
-            tvHumidityStatus.setText("Low");
-            tvHumidityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_warning));
-        } else if (humidity <= 70) {
+        if (humidity < SensorAlertConstants.HUMIDITY_WARNING_LOW) {
+            tvHumidityStatus.setText(humidity < SensorAlertConstants.HUMIDITY_CRITICAL_LOW ? "Critical Low" : "Low");
+            tvHumidityStatus.setTextColor(ContextCompat.getColor(this, humidity < SensorAlertConstants.HUMIDITY_CRITICAL_LOW ? R.color.iot_error : R.color.iot_warning));
+        } else if (humidity <= SensorAlertConstants.HUMIDITY_WARNING_HIGH) {
             tvHumidityStatus.setText("Normal");
             tvHumidityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_success));
         } else {
-            tvHumidityStatus.setText("High");
-            tvHumidityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_secondary));
+            tvHumidityStatus.setText(humidity > SensorAlertConstants.HUMIDITY_CRITICAL_HIGH ? "Critical High" : "High");
+            tvHumidityStatus.setTextColor(ContextCompat.getColor(this, humidity > SensorAlertConstants.HUMIDITY_CRITICAL_HIGH ? R.color.iot_error : R.color.iot_secondary));
         }
     }
 
     private void updateSoilMoistureStatus(double moisture) {
-        if (moisture <= 30) {
-            tvSoilMoistureStatus.setText("Dry");
+        if (moisture < SensorAlertConstants.SOIL_CRITICAL_LOW) {
+            tvSoilMoistureStatus.setText("Critical Dry");
             tvSoilMoistureStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_error));
-        } else if (moisture <= 70) {
-            tvSoilMoistureStatus.setText("Moderate");
+        } else if (moisture <= SensorAlertConstants.SOIL_WARNING_LOW) {
+            tvSoilMoistureStatus.setText("Dry/Moderate");
             tvSoilMoistureStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_warning));
         } else {
-            tvSoilMoistureStatus.setText("Wet");
+            tvSoilMoistureStatus.setText("Normal");
             tvSoilMoistureStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_success));
+        }
+    }
+
+    private void updateTemperatureStatus(double temp) {
+        if (temp < SensorAlertConstants.TEMP_WARNING_LOW) {
+            tvTemperatureStatus.setText(temp < SensorAlertConstants.TEMP_CRITICAL_LOW ? "Critical Low" : "Low");
+            tvTemperatureStatus.setTextColor(ContextCompat.getColor(this, temp < SensorAlertConstants.TEMP_CRITICAL_LOW ? R.color.iot_error : R.color.iot_secondary));
+        } else if (temp <= SensorAlertConstants.TEMP_WARNING_HIGH) {
+            tvTemperatureStatus.setText("Normal");
+            tvTemperatureStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_success));
+        } else {
+            tvTemperatureStatus.setText(temp > SensorAlertConstants.TEMP_CRITICAL_HIGH ? "Critical High" : "High");
+            tvTemperatureStatus.setTextColor(ContextCompat.getColor(this, temp > SensorAlertConstants.TEMP_CRITICAL_HIGH ? R.color.iot_error : R.color.iot_warning));
+        }
+    }
+
+    private void updateLightIntensityStatus(double light) {
+        if (light > SensorAlertConstants.LIGHT_CRITICAL_HIGH) {
+            tvLightIntensityStatus.setText("Extreme Light");
+            tvLightIntensityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_error));
+        } else if (light > SensorAlertConstants.LIGHT_WARNING_HIGH) {
+            tvLightIntensityStatus.setText("Excessive Light");
+            tvLightIntensityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_error));
+        } else {
+            tvLightIntensityStatus.setText("Normal");
+            tvLightIntensityStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_success));
         }
     }
 
@@ -375,10 +406,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
     }
 
-    private void logMoistureToHistory(double moisture) {
-        HistoryRecord record = new HistoryRecord("moisture", moisture, "%", "Prototype Zone", "Admin Terminal", com.google.firebase.Timestamp.now());
-        db.collection("History").add(record)
-                .addOnFailureListener(e -> android.util.Log.e("AgriFlow", "Failed to log admin auto history", e));
+    @Override
+    protected void onResume() {
+        super.onResume();
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setSelectedItemId(R.id.nav_home);
     }
 
     @Override
@@ -426,12 +458,5 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_home);
     }
 }

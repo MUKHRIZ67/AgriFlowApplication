@@ -20,11 +20,13 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import android.graphics.Color;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -44,10 +46,11 @@ public class MoistureHistoryActivity extends AppCompatActivity {
     private MaterialButton btnStartDate, btnEndDate;
     private TextView tvAvgMoisture, tvMinMoisture, tvMaxMoisture, tvEmptyState;
     private LineChart moistureChart;
-    private ChipGroup chipGroupSensorType, chipGroupSort;
+    private ChipGroup chipGroupSensorType, chipGroupSort, chipGroupTimeRange;
 
     private Calendar startDate, endDate;
     private String selectedSensorType = "moisture";
+    private String selectedTimeRange = "today";
     private boolean sortNewestFirst = true;
     private long referenceTimestamp = 0; // To fix float precision issues
 
@@ -81,6 +84,7 @@ public class MoistureHistoryActivity extends AppCompatActivity {
 
         chipGroupSensorType = findViewById(R.id.chipGroupSensorType);
         chipGroupSort = findViewById(R.id.chipGroupSort);
+        chipGroupTimeRange = findViewById(R.id.chipGroupTimeRange);
 
         RecyclerView rvHistory = findViewById(R.id.rvHistory);
         rvHistory.setLayoutManager(new LinearLayoutManager(this));
@@ -104,6 +108,9 @@ public class MoistureHistoryActivity extends AppCompatActivity {
         setupBottomNavigation();
         setupChart();
         checkUserRoleAndApplyTheme();
+        
+        // Initialize with Today range
+        setTodayRange();
         loadHistory();
 
         findViewById(R.id.btnRetry).setOnClickListener(v -> loadHistory());
@@ -158,6 +165,22 @@ public class MoistureHistoryActivity extends AppCompatActivity {
             loadHistory();
         });
 
+        chipGroupTimeRange.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (checkedIds.isEmpty()) return;
+            int id = checkedIds.get(0);
+            if (id == R.id.chipToday) {
+                selectedTimeRange = "today";
+                setTodayRange();
+            } else if (id == R.id.chipWeek) {
+                selectedTimeRange = "week";
+                setWeekRange();
+            } else if (id == R.id.chipMonth) {
+                selectedTimeRange = "month";
+                setMonthRange();
+            }
+            loadHistory();
+        });
+
         chipGroupSort.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (checkedIds.isEmpty()) return;
             int id = checkedIds.get(0);
@@ -188,61 +211,157 @@ public class MoistureHistoryActivity extends AppCompatActivity {
         findViewById(R.id.btnClearFilters).setOnClickListener(v -> {
             startDate = null;
             endDate = null;
+            selectedTimeRange = "custom";
+            chipGroupTimeRange.clearCheck();
             btnStartDate.setText(R.string.filter_start_date);
             btnEndDate.setText(R.string.filter_end_date);
             loadHistory();
         });
     }
 
+    private void setTodayRange() {
+        startDate = Calendar.getInstance();
+        startDate.set(Calendar.HOUR_OF_DAY, 0);
+        startDate.set(Calendar.MINUTE, 0);
+        startDate.set(Calendar.SECOND, 0);
+        startDate.set(Calendar.MILLISECOND, 0);
+        
+        endDate = Calendar.getInstance();
+        endDate.set(Calendar.HOUR_OF_DAY, 23);
+        endDate.set(Calendar.MINUTE, 59);
+        endDate.set(Calendar.SECOND, 59);
+        endDate.set(Calendar.MILLISECOND, 999);
+    }
+
+    private void setWeekRange() {
+        startDate = Calendar.getInstance();
+        startDate.add(Calendar.DAY_OF_YEAR, -7);
+        startDate.set(Calendar.HOUR_OF_DAY, 0);
+        startDate.set(Calendar.MINUTE, 0);
+        startDate.set(Calendar.SECOND, 0);
+        startDate.set(Calendar.MILLISECOND, 0);
+        
+        endDate = Calendar.getInstance();
+        endDate.set(Calendar.HOUR_OF_DAY, 23);
+        endDate.set(Calendar.MINUTE, 59);
+        endDate.set(Calendar.SECOND, 59);
+        endDate.set(Calendar.MILLISECOND, 999);
+    }
+
+    private void setMonthRange() {
+        startDate = Calendar.getInstance();
+        startDate.add(Calendar.MONTH, -1);
+        startDate.set(Calendar.HOUR_OF_DAY, 0);
+        startDate.set(Calendar.MINUTE, 0);
+        startDate.set(Calendar.SECOND, 0);
+        startDate.set(Calendar.MILLISECOND, 0);
+        
+        endDate = Calendar.getInstance();
+        endDate.set(Calendar.HOUR_OF_DAY, 23);
+        endDate.set(Calendar.MINUTE, 59);
+        endDate.set(Calendar.SECOND, 59);
+        endDate.set(Calendar.MILLISECOND, 999);
+    }
+
     private void loadHistory() {
         showState("loading");
 
-        Query query = db.collection("History")
-                .whereEqualTo("sensorType", selectedSensorType);
+        // Use a simple query that doesn't require composite indexes.
+        // We filter the specific date range in memory for reliability.
+        db.collection("History")
+                .whereEqualTo("sensorType", selectedSensorType)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(500) // Fetch recent records to avoid performance issues
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    records.clear();
+                    if (queryDocumentSnapshots.isEmpty()) {
+                        showState("empty");
+                        adapter.notifyDataSetChanged();
+                        return;
+                    }
 
-        if (startDate != null) {
-            query = query.whereGreaterThanOrEqualTo("timestamp", new Timestamp(startDate.getTime()));
-        }
-        if (endDate != null) {
-            query = query.whereLessThanOrEqualTo("timestamp", new Timestamp(endDate.getTime()));
-        }
+                    double sum = 0, min = Double.MAX_VALUE, max = Double.MIN_VALUE;
+                    String unit = getUnitForType(selectedSensorType);
+                    
+                    long startMillis = startDate != null ? startDate.getTimeInMillis() : 0;
+                    long endMillis = endDate != null ? endDate.getTimeInMillis() : Long.MAX_VALUE;
 
-        query.get().addOnSuccessListener(queryDocumentSnapshots -> {
-            records.clear();
-            if (queryDocumentSnapshots.isEmpty()) {
-                showState("empty");
-                adapter.notifyDataSetChanged();
-                return;
-            }
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        HistoryRecord record = doc.toObject(HistoryRecord.class);
+                        
+                        // Data Validation & Range Filtering
+                        if (record.getTimestamp() == null) continue;
+                        
+                        long ts = record.getTimestamp().toDate().getTime();
+                        if (ts < startMillis || ts > endMillis) continue;
+                        
+                        double val = record.getValue();
+                        if ("waterlevel".equalsIgnoreCase(selectedSensorType)) {
+                            if (val < 0 || val > 100) continue;
+                        }
+                        
+                        // Backfill legacy fields
+                        if (record.getSensorType() == null) record.setSensorType(selectedSensorType);
+                        if (record.getUnit() == null) record.setUnit(getUnitForType(record.getSensorType()));
+                        
+                        records.add(record);
+                        sum += val;
+                        if (val < min) min = val;
+                        if (val > max) max = val;
+                    }
 
-            double sum = 0, min = Double.MAX_VALUE, max = Double.MIN_VALUE;
-            String unit = getUnitForType(selectedSensorType);
+                    if (records.isEmpty()) {
+                        showState("empty");
+                    } else {
+                        applySortingAndNotify();
+                        showState("content");
+                        
+                        tvAvgMoisture.setText(String.format(Locale.getDefault(), "%.1f%s", sum / records.size(), unit));
+                        tvMinMoisture.setText(String.format(Locale.getDefault(), "%.1f%s", min, unit));
+                        tvMaxMoisture.setText(String.format(Locale.getDefault(), "%.1f%s", max, unit));
+                        updateChart();
+                    }
 
-            for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                HistoryRecord record = doc.toObject(HistoryRecord.class);
-                // Backfill sensorType and unit if missing in DB for legacy records
-                if (record.getSensorType() == null) record.setSensorType("moisture");
-                if (record.getUnit() == null) record.setUnit(getUnitForType(record.getSensorType()));
-                
-                records.add(record);
-                double val = record.getValue();
-                sum += val;
-                if (val < min) min = val;
-                if (val > max) max = val;
-            }
+                }).addOnFailureListener(e -> {
+                    Log.e(TAG, "Load failed", e);
+                    // Fallback: If ordering failed (might still require index), try without ordering
+                    db.collection("History")
+                            .whereEqualTo("sensorType", selectedSensorType)
+                            .get()
+                            .addOnSuccessListener(snapshots -> {
+                                // Re-run logic without the initial order
+                                records.clear();
+                                double _sum = 0, _min = Double.MAX_VALUE, _max = Double.MIN_VALUE;
+                                long _start = startDate != null ? startDate.getTimeInMillis() : 0;
+                                long _end = endDate != null ? endDate.getTimeInMillis() : Long.MAX_VALUE;
 
-            applySortingAndNotify();
-            showState("content");
-            
-            tvAvgMoisture.setText(String.format(Locale.getDefault(), "%.1f%s", sum / records.size(), unit));
-            tvMinMoisture.setText(String.format(Locale.getDefault(), "%.1f%s", min, unit));
-            tvMaxMoisture.setText(String.format(Locale.getDefault(), "%.1f%s", max, unit));
-            updateChart();
+                                for (QueryDocumentSnapshot doc : snapshots) {
+                                    HistoryRecord record = doc.toObject(HistoryRecord.class);
+                                    if (record.getTimestamp() == null) continue;
+                                    long ts = record.getTimestamp().toDate().getTime();
+                                    if (ts < _start || ts > _end) continue;
+                                    
+                                    records.add(record);
+                                    double val = record.getValue();
+                                    _sum += val;
+                                    if (val < _min) _min = val;
+                                    if (val > _max) _max = val;
+                                }
 
-        }).addOnFailureListener(e -> {
-            Log.e(TAG, "Load failed", e);
-            showState("error");
-        });
+                                if (records.isEmpty()) {
+                                    showState("empty");
+                                } else {
+                                    applySortingAndNotify();
+                                    showState("content");
+                                    tvAvgMoisture.setText(String.format(Locale.getDefault(), "%.1f%s", _sum / records.size(), getUnitForType(selectedSensorType)));
+                                    tvMinMoisture.setText(String.format(Locale.getDefault(), "%.1f%s", _min, getUnitForType(selectedSensorType)));
+                                    tvMaxMoisture.setText(String.format(Locale.getDefault(), "%.1f%s", _max, getUnitForType(selectedSensorType)));
+                                    updateChart();
+                                }
+                            })
+                            .addOnFailureListener(e2 -> showState("error"));
+                });
     }
 
     private void applySortingAndNotify() {
@@ -305,14 +424,26 @@ public class MoistureHistoryActivity extends AppCompatActivity {
         XAxis xAxis = moistureChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
-        xAxis.setGranularity(1f); // One unit (ms/1000)
+        xAxis.setGranularity(1f);
+        xAxis.setLabelCount(6, false);
         xAxis.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant));
         xAxis.setValueFormatter(new ValueFormatter() {
-            private final java.text.SimpleDateFormat mFormat = new java.text.SimpleDateFormat("HH:mm", Locale.getDefault());
             @Override
             public String getFormattedValue(float value) {
-                // Add back the reference timestamp and convert to date
-                return mFormat.format(new java.util.Date((long) value + referenceTimestamp));
+                long millis = (long) value + referenceTimestamp;
+                java.util.Date date = new java.util.Date(millis);
+                
+                SimpleDateFormat sdf;
+                if ("today".equals(selectedTimeRange)) {
+                    sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+                } else if ("week".equals(selectedTimeRange)) {
+                    sdf = new SimpleDateFormat("EEE dd", Locale.getDefault());
+                } else if ("month".equals(selectedTimeRange)) {
+                    sdf = new SimpleDateFormat("dd MMM", Locale.getDefault());
+                } else {
+                    sdf = new SimpleDateFormat("dd/MM HH:mm", Locale.getDefault());
+                }
+                return sdf.format(date);
             }
         });
 
@@ -321,7 +452,6 @@ public class MoistureHistoryActivity extends AppCompatActivity {
         leftAxis.setGridColor(ContextCompat.getColor(this, R.color.surface_container_high));
         leftAxis.setTextColor(ContextCompat.getColor(this, R.color.on_surface_variant));
         leftAxis.setAxisMinimum(0f);
-        // Range is updated dynamically in loadHistory based on sensor type
 
         moistureChart.getAxisRight().setEnabled(false);
         moistureChart.getLegend().setEnabled(false);
@@ -335,40 +465,53 @@ public class MoistureHistoryActivity extends AppCompatActivity {
 
         List<Entry> entries = new ArrayList<>();
         List<HistoryRecord> sortedForChart = new ArrayList<>(records);
+        
+        // Chronological Sorting: Oldest to Newest
         Collections.sort(sortedForChart, (a, b) -> a.getTimestamp().compareTo(b.getTimestamp()));
 
-        // Use the first record's timestamp as reference to avoid float precision loss
+        // Use the first record's timestamp as reference to avoid float precision loss (Reverted)
         referenceTimestamp = sortedForChart.get(0).getTimestamp().toDate().getTime();
 
         for (HistoryRecord record : sortedForChart) {
-            if (record.getTimestamp() != null) {
-                long currentTs = record.getTimestamp().toDate().getTime();
-                // Store as offset from reference
-                entries.add(new Entry((float) (currentTs - referenceTimestamp), (float) record.getValue()));
-            }
+            long currentTs = record.getTimestamp().toDate().getTime();
+            entries.add(new Entry((float) (currentTs - referenceTimestamp), (float) record.getValue()));
         }
 
         LineDataSet dataSet = new LineDataSet(entries, selectedSensorType);
-        dataSet.setColor(ContextCompat.getColor(this, R.color.primary_dark_green));
+        
+        // Revert back to original green color for all sensors
+        int chartColor = ContextCompat.getColor(this, R.color.primary_dark_green);
+        
+        dataSet.setColor(chartColor);
         dataSet.setLineWidth(2.5f);
         dataSet.setDrawCircles(true);
-        dataSet.setCircleColor(ContextCompat.getColor(this, R.color.primary_dark_green));
+        dataSet.setCircleColor(chartColor);
         dataSet.setCircleRadius(4f);
         dataSet.setDrawCircleHole(true);
         dataSet.setCircleHoleColor(ContextCompat.getColor(this, R.color.bg_light_cream));
         
-        // Horizontal Bezier is often "cleaner" and doesn't overshoot as much as Cubic
-        dataSet.setMode(LineDataSet.Mode.HORIZONTAL_BEZIER);
+        // Water Level specific: Stepped line
+        if ("waterlevel".equalsIgnoreCase(selectedSensorType)) {
+            dataSet.setMode(LineDataSet.Mode.STEPPED);
+            dataSet.setDrawCircles(false);
+        } else {
+            // Revert back to original behavior for other sensors
+            dataSet.setMode(LineDataSet.Mode.HORIZONTAL_BEZIER);
+        }
         
         dataSet.setDrawFilled(true);
-        dataSet.setFillColor(ContextCompat.getColor(this, R.color.primary_dark_green));
+        dataSet.setFillColor(chartColor);
         dataSet.setFillAlpha(35);
         dataSet.setDrawValues(false);
 
         LineData lineData = new LineData(dataSet);
         moistureChart.setData(lineData);
         
-        // Adjust Y Axis based on sensor type
+        // Revert back to automatic X-axis scaling based on data
+        XAxis xAxis = moistureChart.getXAxis();
+        xAxis.resetAxisMinimum();
+        xAxis.resetAxisMaximum();
+        
         YAxis leftAxis = moistureChart.getAxisLeft();
         if ("temperature".equalsIgnoreCase(selectedSensorType)) {
             leftAxis.setAxisMaximum(55f);

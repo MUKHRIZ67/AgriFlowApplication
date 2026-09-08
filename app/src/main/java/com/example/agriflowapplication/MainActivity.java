@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Auto-login check
         if (mAuth.getCurrentUser() != null) {
+            FirebaseManager.getInstance().updateFcmToken();
             navigateToDashboard();
             return;
         }
@@ -74,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
             mAuth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this, task -> {
                         if (task.isSuccessful()) {
+                            FirebaseManager.getInstance().updateFcmToken();
                             navigateToDashboard();
                         } else {
                             String error = task.getException() != null ? task.getException().getMessage() : "Unknown error";
