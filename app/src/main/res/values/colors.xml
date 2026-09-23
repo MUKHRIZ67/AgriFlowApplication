@@ -6,6 +6,7 @@
     <!-- New Minimalist AgriFlow Theme Colors -->
     <color name="primary_dark_green">#386A20</color>
     <color name="bg_light_cream">#FCFDF6</color>
+    <color name="surface">#FCFDF6</color>
     <color name="accent_green">#386A20</color>
     <color name="surface_container">#EFF2E5</color>
     <color name="surface_container_high">#E3E6D9</color>

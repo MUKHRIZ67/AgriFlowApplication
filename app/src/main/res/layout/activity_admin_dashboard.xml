@@ -538,123 +538,249 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <RelativeLayout
+                    <!-- Water Irrigation Section -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="12dp">
+                        android:orientation="vertical"
+                        android:padding="8dp">
 
-                        <com.google.android.material.card.MaterialCardView
-                            android:id="@+id/iconPump1"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            app:cardCornerRadius="10dp"
-                            app:cardElevation="0dp"
-                            app:cardBackgroundColor="@color/iot_surface_high">
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@android:drawable/ic_menu_gallery"
-                                app:tint="@color/iot_on_surface_variant" />
-                        </com.google.android.material.card.MaterialCardView>
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <com.google.android.material.card.MaterialCardView
+                                android:id="@+id/iconPump1"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                app:cardCornerRadius="10dp"
+                                app:cardElevation="0dp"
+                                app:cardBackgroundColor="@color/iot_surface_high">
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_gravity="center"
+                                    android:src="@android:drawable/ic_menu_gallery"
+                                    app:tint="@color/iot_on_surface_variant" />
+                            </com.google.android.material.card.MaterialCardView>
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/iconPump1"
+                                android:layout_marginStart="12dp"
+                                android:layout_centerVertical="true"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Water Irrigation"
+                                    android:textStyle="bold"
+                                    android:textColor="@color/iot_on_surface"/>
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Status: "
+                                        android:textSize="12sp"
+                                        android:textColor="@color/iot_on_surface_variant"/>
+                                    <TextView
+                                        android:id="@+id/tvWaterPumpStatus"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="OFF"
+                                        android:textStyle="bold"
+                                        android:textSize="12sp"
+                                        android:textColor="@color/iot_on_surface_variant"/>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/switchWaterPump"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true" />
+                        </RelativeLayout>
 
                         <LinearLayout
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_toEndOf="@id/iconPump1"
-                            android:layout_marginStart="16dp"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Water pump"
-                                android:textStyle="bold"
-                                android:textColor="@color/iot_on_surface"/>
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Off"
-                                android:textSize="12sp"
-                                android:textColor="@color/iot_on_surface_variant"/>
-                        </LinearLayout>
+                            android:orientation="horizontal"
+                            android:layout_marginTop="10dp">
 
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switchWaterPump"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true" />
-                    </RelativeLayout>
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnStartWater"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="6dp"
+                                android:text="START"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                app:cornerRadius="10dp"
+                                app:backgroundTint="@color/iot_primary" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnStopWater"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="STOP"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                app:strokeColor="@color/iot_error"
+                                android:textColor="@color/iot_error"
+                                app:cornerRadius="10dp" />
+                        </LinearLayout>
+                    </LinearLayout>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/iot_border"
-                        android:layout_marginHorizontal="12dp"/>
+                        android:layout_marginHorizontal="12dp"
+                        android:layout_marginVertical="4dp"/>
 
-                    <RelativeLayout
+                    <!-- Fertilizer Irrigation Section -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="12dp">
+                        android:orientation="vertical"
+                        android:padding="8dp">
 
-                        <com.google.android.material.card.MaterialCardView
-                            android:id="@+id/iconPump2"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            app:cardCornerRadius="10dp"
-                            app:cardElevation="0dp"
-                            app:cardBackgroundColor="@color/iot_surface_high">
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@android:drawable/ic_menu_edit"
-                                app:tint="@color/iot_on_surface_variant" />
-                        </com.google.android.material.card.MaterialCardView>
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <com.google.android.material.card.MaterialCardView
+                                android:id="@+id/iconPump2"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                app:cardCornerRadius="10dp"
+                                app:cardElevation="0dp"
+                                app:cardBackgroundColor="@color/iot_surface_high">
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_gravity="center"
+                                    android:src="@android:drawable/ic_menu_edit"
+                                    app:tint="@color/iot_on_surface_variant" />
+                            </com.google.android.material.card.MaterialCardView>
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/iconPump2"
+                                android:layout_marginStart="12dp"
+                                android:layout_centerVertical="true"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Fertilizer Irrigation"
+                                    android:textStyle="bold"
+                                    android:textColor="@color/iot_on_surface"/>
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Status: "
+                                        android:textSize="12sp"
+                                        android:textColor="@color/iot_on_surface_variant"/>
+                                    <TextView
+                                        android:id="@+id/tvFertilizerPumpStatus"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="OFF"
+                                        android:textStyle="bold"
+                                        android:textSize="12sp"
+                                        android:textColor="@color/iot_on_surface_variant"/>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/switchFertilizerPump"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true" />
+                        </RelativeLayout>
 
                         <LinearLayout
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_toEndOf="@id/iconPump2"
-                            android:layout_marginStart="16dp"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Fertilizer pump"
-                                android:textStyle="bold"
-                                android:textColor="@color/iot_on_surface"/>
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Off"
-                                android:textSize="12sp"
-                                android:textColor="@color/iot_on_surface_variant"/>
-                        </LinearLayout>
+                            android:orientation="horizontal"
+                            android:layout_marginTop="10dp">
 
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switchFertilizerPump"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true" />
-                    </RelativeLayout>
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnStartFertilizer"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="6dp"
+                                android:text="START"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                app:cornerRadius="10dp"
+                                app:backgroundTint="@color/iot_primary" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnStopFertilizer"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="STOP"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                app:strokeColor="@color/iot_error"
+                                android:textColor="@color/iot_error"
+                                app:cornerRadius="10dp" />
+                        </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Today's Schedule -->
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Today's Schedule Header -->
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:layout_marginBottom="12dp"
-                android:text="TODAY'S SCHEDULE"
-                android:textColor="@color/iot_on_surface_variant"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.05" />
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="TODAY'S SCHEDULE"
+                    android:textColor="@color/iot_on_surface_variant"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05" />
+
+                <TextView
+                    android:id="@+id/btnConfigureSchedule"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:text="Configure Schedule"
+                    android:textColor="@color/iot_accent"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -669,13 +795,14 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <!-- Schedule Item 1 -->
+                    <!-- Water Schedule Item -->
                     <RelativeLayout
+                        android:id="@+id/layoutWaterSchedule"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="12dp">
                         <TextView
-                            android:id="@+id/time1"
+                            android:id="@+id/tvWaterScheduleTime"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@drawable/iot_bg_schedule_time"
@@ -686,102 +813,67 @@
                             android:textSize="12sp"
                             android:textStyle="bold"/>
                         <TextView
+                            android:id="@+id/tvWaterScheduleDetail"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_toEndOf="@id/time1"
+                            android:layout_toEndOf="@id/tvWaterScheduleTime"
                             android:layout_marginStart="16dp"
                             android:layout_centerVertical="true"
-                            android:text="Zone 1"
+                            android:text="Water Irrigation (5 mins)"
                             android:textStyle="bold"
                             android:textColor="@color/iot_on_surface"/>
                         <TextView
+                            android:id="@+id/tvWaterScheduleStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true"
-                            android:text="Completed"
+                            android:text="Every Day"
                             android:textSize="11sp"
                             android:textColor="@color/iot_on_surface_variant"/>
                     </RelativeLayout>
 
                     <View
+                        android:id="@+id/dividerSchedule"
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/iot_border"
                         android:layout_marginHorizontal="12dp"/>
 
-                    <!-- Schedule Item 2 -->
+                    <!-- Fertilizer Schedule Item -->
                     <RelativeLayout
+                        android:id="@+id/layoutFertilizerSchedule"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="12dp">
                         <TextView
-                            android:id="@+id/time2"
+                            android:id="@+id/tvFertilizerScheduleTime"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@drawable/iot_bg_schedule_time"
                             android:paddingHorizontal="12dp"
                             android:paddingVertical="6dp"
-                            android:text="12:30 PM"
+                            android:text="08:30 AM"
                             android:textColor="@color/iot_accent"
                             android:textSize="12sp"
                             android:textStyle="bold"/>
                         <TextView
+                            android:id="@+id/tvFertilizerScheduleDetail"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_toEndOf="@id/time2"
+                            android:layout_toEndOf="@id/tvFertilizerScheduleTime"
                             android:layout_marginStart="16dp"
                             android:layout_centerVertical="true"
-                            android:text="Zone 2"
+                            android:text="Fertilizer Distribution (30 secs)"
                             android:textStyle="bold"
                             android:textColor="@color/iot_on_surface"/>
                         <TextView
+                            android:id="@+id/tvFertilizerScheduleStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true"
-                            android:text="Completed"
-                            android:textSize="11sp"
-                            android:textColor="@color/iot_on_surface_variant"/>
-                    </RelativeLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/iot_border"
-                        android:layout_marginHorizontal="12dp"/>
-
-                    <!-- Schedule Item 3 -->
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="12dp">
-                        <TextView
-                            android:id="@+id/time3"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/iot_bg_schedule_time"
-                            android:paddingHorizontal="12dp"
-                            android:paddingVertical="6dp"
-                            android:text="04:00 PM"
-                            android:textColor="@color/iot_accent"
-                            android:textSize="12sp"
-                            android:textStyle="bold"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_toEndOf="@id/time3"
-                            android:layout_marginStart="16dp"
-                            android:layout_centerVertical="true"
-                            android:text="Zone 3"
-                            android:textStyle="bold"
-                            android:textColor="@color/iot_on_surface"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:text="Upcoming"
+                            android:text="Every 7 Days"
                             android:textSize="11sp"
                             android:textColor="@color/iot_on_surface_variant"/>
                     </RelativeLayout>

@@ -61,6 +61,9 @@
         <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
+        <activity
+            android:name=".ScheduleActivity"
+            android:exported="false" />
 
         <service
             android:name=".AgriFlowMessagingService"

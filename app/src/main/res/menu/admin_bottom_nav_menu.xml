@@ -13,6 +13,10 @@
         android:icon="@drawable/ic_nav_manage"
         android:title="Manage" />
     <item
+        android:id="@+id/nav_schedule"
+        android:icon="@drawable/ic_nav_schedule"
+        android:title="Schedule" />
+    <item
         android:id="@+id/nav_profile"
         android:icon="@drawable/ic_nav_profile"
         android:title="Profile" />
