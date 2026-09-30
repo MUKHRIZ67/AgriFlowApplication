@@ -103,6 +103,16 @@
                     </FrameLayout>
 
                     <ImageButton
+                        android:id="@+id/btnAiAssistantTop"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@android:drawable/ic_dialog_info"
+                        app:tint="@color/iot_accent"
+                        android:contentDescription="AI Assistant" />
+
+                    <ImageButton
                         android:id="@+id/btnLogout"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
@@ -512,6 +522,75 @@
 
 
             </GridLayout>
+
+            <!-- AgriFlow AI Assistant Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAiAssistant"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/iot_surface">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/iconAi"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@color/iot_primary">
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@android:drawable/ic_dialog_info"
+                            app:tint="@color/white" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toEndOf="@id/iconAi"
+                        android:layout_toStartOf="@id/btnAskAi"
+                        android:layout_marginStart="14dp"
+                        android:layout_centerVertical="true"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="AgriFlow AI Assistant"
+                            android:textStyle="bold"
+                            android:textColor="@color/iot_on_surface"
+                            android:textSize="14sp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Ask questions or analyze farm health"
+                            android:textSize="11sp"
+                            android:textColor="@color/iot_on_surface_variant"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAskAi"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="ASK AI"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="8dp"
+                        app:backgroundTint="@color/iot_primary" />
+                </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Irrigation Control -->
             <TextView

@@ -64,6 +64,10 @@
         <activity
             android:name=".ScheduleActivity"
             android:exported="false" />
+        <activity
+            android:name=".AiAssistantActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <service
             android:name=".AgriFlowMessagingService"

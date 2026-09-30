@@ -20,6 +20,13 @@
     <color name="success_container">#DCF5DC</color>
     <color name="text_grey">#43483D</color>
 
+    <!-- AgriFlow AI Accent Colors -->
+    <color name="ai_accent">#386A20</color>
+    <color name="ai_bubble_user">#DCF5DC</color>
+    <color name="ai_bubble_ai">#EFF2E5</color>
+    <color name="ai_text_user">#1A1C16</color>
+    <color name="ai_text_ai">#1A1C16</color>
+
     <!-- IoT Dark Theme (Admin) -->
     <color name="iot_bg">#0F172A</color>
     <color name="iot_surface">#1E293B</color>

@@ -138,6 +138,21 @@ public class DashboardActivity extends AppCompatActivity {
             btnConfigureSchedule.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, ScheduleActivity.class)));
         }
 
+        View btnAiAssistantTop = findViewById(R.id.btnAiAssistantTop);
+        if (btnAiAssistantTop != null) {
+            btnAiAssistantTop.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, AiAssistantActivity.class)));
+        }
+
+        View btnAskAi = findViewById(R.id.btnAskAi);
+        if (btnAskAi != null) {
+            btnAskAi.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, AiAssistantActivity.class)));
+        }
+
+        View cardAiAssistant = findViewById(R.id.cardAiAssistant);
+        if (cardAiAssistant != null) {
+            cardAiAssistant.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, AiAssistantActivity.class)));
+        }
+
         fetchUserName();
         initializeDatabaseStructure();
         initializeDeviceControl();
