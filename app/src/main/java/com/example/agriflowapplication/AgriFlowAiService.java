@@ -28,8 +28,8 @@ public class AgriFlowAiService {
 
     private static final String TAG = "AgriFlow_AI";
 
-    // Backend endpoint URL. Android emulator uses 10.0.2.2 to connect to host localhost:3000
-    private static final String BACKEND_CHAT_URL = "http://10.0.2.2:3000/api/chat";
+    // Backend endpoint URL deployed on Render cloud
+    private static final String BACKEND_CHAT_URL = "https://agriflow-backend-nu0a.onrender.com/api/chat";
 
     public interface AiCallback {
         void onSuccess(String response);

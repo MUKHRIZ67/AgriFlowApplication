@@ -55,82 +55,76 @@ app.post('/api/chat', async (req, res) => {
         }
 
         // 3. Prepare Gemini API Request
-        // Using Free Tier eligible model: gemini-1.5-flash
-        const model = 'gemini-1.5-flash';
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        // Try Free Tier eligible text models in order
+        const models = ['gemini-1.5-flash', 'gemini-2.0-flash'];
+        let lastData = null;
+        let lastStatus = 500;
+        let textReply = null;
 
-        const systemPrompt = "You are AgriFlow Farm Assistant, an expert agricultural AI assistant. You help farmers understand their live sensor telemetry, irrigation conditions, fertilizer schedules, and alerts. Provide clear, accurate, friendly, and well-structured answers.";
+        for (const model of models) {
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-        const userContent = context
-            ? `Farm Live Context:\n${context}\n\nUser Question:\n${userQuery.trim()}`
-            : userQuery.trim();
+            const systemInstruction = "You are AgriFlow Farm Assistant, an expert agricultural AI assistant. Help farmers understand their telemetry, irrigation, schedules, and alerts. Keep answers clear, friendly, and well-structured.";
 
-        const payload = {
-            contents: [
-                {
-                    role: "user",
-                    parts: [{ text: userContent }]
+            const userContent = context
+                ? `${systemInstruction}\n\nLive Farm Context:\n${context}\n\nUser Question:\n${userQuery.trim()}`
+                : `${systemInstruction}\n\nUser Question:\n${userQuery.trim()}`;
+
+            const payload = {
+                contents: [
+                    {
+                        role: "user",
+                        parts: [{ text: userContent }]
+                    }
+                ],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 1000
                 }
-            ],
-            systemInstruction: {
-                parts: [{ text: systemPrompt }]
-            },
-            generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 1000
+            };
+
+            try {
+                const response = await fetch(geminiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                lastStatus = response.status;
+                lastData = await response.json();
+
+                if (response.ok) {
+                    const candidates = lastData?.candidates;
+                    textReply = candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (textReply) break;
+                } else {
+                    console.error(`❌ Gemini API Error for model ${model} (${response.status}):`, JSON.stringify(lastData));
+                }
+            } catch (fetchErr) {
+                console.error(`❌ Network error contacting model ${model}:`, fetchErr);
             }
-        };
+        }
 
-        // 4. Call Google Gemini API
-        const response = await fetch(geminiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
+        // 4. Handle Failure if no model generated a response
+        if (!textReply) {
+            const errorDetails = lastData?.error?.message || "Unable to generate response from Gemini API.";
 
-        const data = await response.json();
-
-        // 5. Handle Gemini API Error Responses
-        if (!response.ok) {
-            console.error(`❌ Gemini API Error (${response.status}):`, JSON.stringify(data));
-
-            // Rate Limit / Quota Exceeded Error (HTTP 429)
-            if (response.status === 429) {
+            if (lastStatus === 429) {
                 return res.status(429).json({
                     error: "Gemini API rate limit exceeded.",
                     reply: "Rate limit reached for the Gemini Free Tier. Please wait a moment and try again."
                 });
             }
 
-            // Unauthorized / Invalid API Key (HTTP 400 or 403)
-            if (response.status === 400 || response.status === 401 || response.status === 403) {
-                const errorMsg = data?.error?.message || "Invalid or unauthorized API Key.";
-                return res.status(response.status).json({
-                    error: errorMsg,
-                    reply: `Gemini API Key Error: ${errorMsg}`
-                });
-            }
-
-            // Other Gemini Failures
-            return res.status(response.status || 500).json({
-                error: data?.error?.message || "Gemini API service error.",
-                reply: "Sorry, I encountered an issue contacting the Gemini AI service. Please try again later."
+            return res.status(lastStatus || 500).json({
+                error: errorDetails,
+                reply: `Gemini API Error: ${errorDetails}`
             });
         }
 
-        // 6. Extract Response Text
-        const candidates = data?.candidates;
-        const textReply = candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (!textReply) {
-            return res.json({
-                reply: "I received your request, but no response text was generated. Please try asking in a different way."
-            });
-        }
-
-        // 7. Return in required JSON format: { "reply": "AI response here" }
+        // 5. Return in required JSON format: { "reply": "AI response here" }
         return res.json({
             reply: textReply.trim()
         });
