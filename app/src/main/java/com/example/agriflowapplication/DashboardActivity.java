@@ -140,17 +140,29 @@ public class DashboardActivity extends AppCompatActivity {
 
         View btnAiAssistantTop = findViewById(R.id.btnAiAssistantTop);
         if (btnAiAssistantTop != null) {
-            btnAiAssistantTop.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, AiAssistantActivity.class)));
+            btnAiAssistantTop.setOnClickListener(v -> {
+                Intent intent = new Intent(DashboardActivity.this, AiAssistantActivity.class);
+                intent.putExtra("is_admin", false);
+                startActivity(intent);
+            });
         }
 
         View btnAskAi = findViewById(R.id.btnAskAi);
         if (btnAskAi != null) {
-            btnAskAi.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, AiAssistantActivity.class)));
+            btnAskAi.setOnClickListener(v -> {
+                Intent intent = new Intent(DashboardActivity.this, AiAssistantActivity.class);
+                intent.putExtra("is_admin", false);
+                startActivity(intent);
+            });
         }
 
         View cardAiAssistant = findViewById(R.id.cardAiAssistant);
         if (cardAiAssistant != null) {
-            cardAiAssistant.setOnClickListener(v -> startActivity(new Intent(DashboardActivity.this, AiAssistantActivity.class)));
+            cardAiAssistant.setOnClickListener(v -> {
+                Intent intent = new Intent(DashboardActivity.this, AiAssistantActivity.class);
+                intent.putExtra("is_admin", false);
+                startActivity(intent);
+            });
         }
 
         fetchUserName();

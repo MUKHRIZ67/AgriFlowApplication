@@ -9,6 +9,7 @@
     android:paddingVertical="6dp">
 
     <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardUserMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:cardBackgroundColor="@color/ai_bubble_user"

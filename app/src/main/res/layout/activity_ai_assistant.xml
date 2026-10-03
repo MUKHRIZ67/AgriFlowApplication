@@ -31,6 +31,7 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/tvAiTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="AgriFlow AI Assistant"
@@ -39,6 +40,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/tvAiSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Farm Data Connected"
@@ -164,6 +166,7 @@
             android:layout_marginEnd="8dp" />
 
         <TextView
+            android:id="@+id/tvLoadingText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="AgriFlow AI is analyzing your farm data..."
