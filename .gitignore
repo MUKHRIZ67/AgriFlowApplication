@@ -13,3 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Environment and Node dependencies
+.env
+*.env
+!.env.example
+node_modules/
+server/.env
+server/node_modules/
