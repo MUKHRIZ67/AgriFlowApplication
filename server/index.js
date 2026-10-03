@@ -54,15 +54,46 @@ app.post('/api/chat', async (req, res) => {
             });
         }
 
-        // 3. Prepare Gemini API Request
-        // Try Free Tier eligible text models in order
-        const models = ['gemini-1.5-flash', 'gemini-2.0-flash'];
+        // 3. Dynamic Model Discovery & Fallback List
+        let candidateModels = [
+            'gemini-1.5-flash',
+            'gemini-1.5-flash-latest',
+            'gemini-1.5-flash-8b',
+            'gemini-2.0-flash-exp',
+            'gemini-1.5-pro'
+        ];
+
+        try {
+            const modelsListUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+            const listRes = await fetch(modelsListUrl);
+            if (listRes.ok) {
+                const listData = await listRes.json();
+                if (Array.isArray(listData.models)) {
+                    const available = listData.models
+                        .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+                        .map(m => m.name.replace(/^models\//, ''));
+
+                    if (available.length > 0) {
+                        const flashModels = available.filter(m => m.includes('flash'));
+                        const proModels = available.filter(m => m.includes('pro') && !m.includes('flash'));
+                        const otherModels = available.filter(m => !m.includes('flash') && !m.includes('pro'));
+
+                        candidateModels = [...flashModels, ...proModels, ...otherModels];
+                        console.log(`ℹ️ Discovered ${available.length} active Gemini models. Selected primary model: ${candidateModels[0]}`);
+                    }
+                }
+            }
+        } catch (listErr) {
+            console.warn("⚠️ Could not fetch models list dynamically, using default candidate list.", listErr.message);
+        }
+
         let lastData = null;
         let lastStatus = 500;
         let textReply = null;
 
-        for (const model of models) {
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        for (const model of candidateModels) {
+            const modelName = model.startsWith('models/') ? model : `models/${model}`;
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
 
             const systemInstruction = "You are AgriFlow Farm Assistant, an expert agricultural AI assistant. Help farmers understand their telemetry, irrigation, schedules, and alerts. Keep answers clear, friendly, and well-structured.";
 
@@ -98,12 +129,15 @@ app.post('/api/chat', async (req, res) => {
                 if (response.ok) {
                     const candidates = lastData?.candidates;
                     textReply = candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (textReply) break;
+                    if (textReply) {
+                        console.log(`✅ Successfully generated response using model: ${modelName}`);
+                        break;
+                    }
                 } else {
-                    console.error(`❌ Gemini API Error for model ${model} (${response.status}):`, JSON.stringify(lastData));
+                    console.error(`❌ Gemini API Error for model ${modelName} (${response.status}):`, JSON.stringify(lastData));
                 }
             } catch (fetchErr) {
-                console.error(`❌ Network error contacting model ${model}:`, fetchErr);
+                console.error(`❌ Network error contacting model ${modelName}:`, fetchErr);
             }
         }
 
