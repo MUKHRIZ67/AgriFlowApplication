@@ -312,6 +312,77 @@
                     app:cardElevation="0dp"
                     app:cardBackgroundColor="@color/surface_container">
 
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:id="@+id/ivTemperature"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_info_details"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:tint="#F06292" />
+
+                        <TextView
+                            android:id="@+id/labelTemperature"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Temperature"
+                            android:textColor="@color/on_surface_variant"
+                            android:textSize="12sp"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/ivTemperature" />
+
+                        <TextView
+                            android:id="@+id/tvTemperature"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="27.8°C"
+                            android:textColor="@color/on_surface"
+                            android:textSize="22sp"
+                            android:textStyle="bold"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/labelTemperature" />
+
+                        <TextView
+                            android:id="@+id/tvTemperatureStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Normal"
+                            android:textColor="@color/primary_dark_green"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/tvTemperature" />
+
+                        <View
+                            android:id="@+id/vTempBar"
+                            android:layout_width="0dp"
+                            android:layout_height="4dp"
+                            android:layout_marginTop="16dp"
+                            android:background="@drawable/temp_gradient"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/tvTemperatureStatus" />
+
+                        <View
+                            android:id="@+id/vTempIndicator"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:background="@drawable/dot_online"
+                            app:layout_constraintBottom_toBottomOf="@id/vTempBar"
+                            app:layout_constraintEnd_toEndOf="@id/vTempBar"
+                            app:layout_constraintHorizontal_bias="0.5"
+                            app:layout_constraintStart_toStartOf="@id/vTempBar"
+                            app:layout_constraintTop_toTopOf="@id/vTempBar" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <!-- Humidity -->
@@ -447,81 +518,6 @@
 
                     </RelativeLayout>
                 </com.google.android.material.card.MaterialCardView>
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_row="0"
-                    android:layout_column="0"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:id="@+id/ivTemperature"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_menu_info_details"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="#F06292" />
-
-                    <TextView
-                        android:id="@+id/labelTemperature"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="Temperature"
-                        android:textColor="@color/on_surface_variant"
-                        android:textSize="12sp"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/ivTemperature" />
-
-                    <TextView
-                        android:id="@+id/tvTemperature"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="27.8°C"
-                        android:textColor="@color/on_surface"
-                        android:textSize="22sp"
-                        android:textStyle="bold"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/labelTemperature" />
-
-                    <TextView
-                        android:id="@+id/tvTemperatureStatus"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="Normal"
-                        android:textColor="@color/primary_dark_green"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/tvTemperature" />
-
-                    <View
-                        android:id="@+id/vTempBar"
-                        android:layout_width="0dp"
-                        android:layout_height="4dp"
-                        android:layout_marginTop="16dp"
-                        android:background="@drawable/temp_gradient"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/tvTemperatureStatus" />
-
-                    <View
-                        android:id="@+id/vTempIndicator"
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:background="@drawable/dot_online"
-                        app:layout_constraintBottom_toBottomOf="@id/vTempBar"
-                        app:layout_constraintEnd_toEndOf="@id/vTempBar"
-                        app:layout_constraintHorizontal_bias="0.5"
-                        app:layout_constraintStart_toStartOf="@id/vTempBar"
-                        app:layout_constraintTop_toTopOf="@id/vTempBar" />
-
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
 
             </GridLayout>
 

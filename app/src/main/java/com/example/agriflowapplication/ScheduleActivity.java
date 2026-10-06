@@ -36,11 +36,11 @@ public class ScheduleActivity extends AppCompatActivity {
 
     private String waterStartTime = "08:00 AM";
     private String fertilizerStartTime = "08:30 AM";
+    private boolean isAdmin = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_schedule);
 
         mAuth = FirebaseManager.getInstance().getAuth();
         db = FirebaseManager.getInstance().getDb();
@@ -49,6 +49,14 @@ public class ScheduleActivity extends AppCompatActivity {
             startActivity(new Intent(this, MainActivity.class));
             finish();
             return;
+        }
+
+        isAdmin = getIntent().getBooleanExtra("is_admin", false);
+        if (isAdmin) {
+            setTheme(R.style.Theme_AgriFlow_Admin);
+            setContentView(R.layout.activity_admin_schedule);
+        } else {
+            setContentView(R.layout.activity_schedule);
         }
 
         View btnBack = findViewById(R.id.btnBack);
@@ -76,6 +84,16 @@ public class ScheduleActivity extends AppCompatActivity {
         findViewById(R.id.btnSaveWaterSchedule).setOnClickListener(v -> saveWaterSchedule());
         findViewById(R.id.btnSaveFertilizerSchedule).setOnClickListener(v -> saveFertilizerSchedule());
 
+        View btnTestWater = findViewById(R.id.btnTestWaterSchedule);
+        if (btnTestWater != null) {
+            btnTestWater.setOnClickListener(v -> testWaterSchedule());
+        }
+
+        View btnTestFertilizer = findViewById(R.id.btnTestFertilizerSchedule);
+        if (btnTestFertilizer != null) {
+            btnTestFertilizer.setOnClickListener(v -> testFertilizerSchedule());
+        }
+
         setupBottomNavigation();
         loadExistingSchedules();
     }
@@ -100,7 +118,7 @@ public class ScheduleActivity extends AppCompatActivity {
             int hour12 = hourOfDay % 12;
             if (hour12 == 0) hour12 = 12;
 
-            String timeFormatted = String.format(Locale.getDefault(), "%02d:%02d %s", hour12, selectedMinute, amPm);
+            String timeFormatted = String.format(Locale.US, "%02d:%02d %s", hour12, selectedMinute, amPm);
 
             if (isWater) {
                 waterStartTime = timeFormatted;
@@ -174,19 +192,23 @@ public class ScheduleActivity extends AppCompatActivity {
         waterSchedule.put("lastUpdated", Timestamp.now());
         waterSchedule.put("updatedBy", mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "unknown");
 
-        // Save to system_data/schedules/water and schedules/water
         db.collection("schedules").document("water").set(waterSchedule, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     db.collection("system_data").document("schedules").collection("water").document("config")
                             .set(waterSchedule, SetOptions.merge());
 
-                    if (enabled) {
-                        db.collection("system_data").document("device_control").update("waterPumpState", "SCHEDULED");
-                    }
+                    Map<String, Object> stateUpdate = new HashMap<>();
+                    stateUpdate.put("waterPumpState", enabled ? "SCHEDULED" : "OFF");
+                    stateUpdate.put("waterPump", false);
+                    stateUpdate.put("water_pump", false);
+                    stateUpdate.put("lastUpdated", Timestamp.now());
 
-                    Toast.makeText(this, "Watering schedule saved!", Toast.LENGTH_SHORT).show();
+                    db.collection("system_data").document("device_control").set(stateUpdate, SetOptions.merge());
+                    db.collection("system_data").document("live_telemetry").set(stateUpdate, SetOptions.merge());
+
+                    Toast.makeText(this, "Watering schedule saved! (" + (enabled ? "Enabled for " + waterStartTime : "Disabled") + ")", Toast.LENGTH_SHORT).show();
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Toast.makeText(this, "Error saving schedule: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void saveFertilizerSchedule() {
@@ -208,13 +230,120 @@ public class ScheduleActivity extends AppCompatActivity {
                     db.collection("system_data").document("schedules").collection("fertilizer").document("config")
                             .set(fertilizerSchedule, SetOptions.merge());
 
-                    if (enabled) {
-                        db.collection("system_data").document("device_control").update("fertilizerPumpState", "SCHEDULED");
-                    }
+                    Map<String, Object> stateUpdate = new HashMap<>();
+                    stateUpdate.put("fertilizerPumpState", enabled ? "SCHEDULED" : "OFF");
+                    stateUpdate.put("fertilizerPump", false);
+                    stateUpdate.put("fertilizer_pump", false);
+                    stateUpdate.put("lastUpdated", Timestamp.now());
 
-                    Toast.makeText(this, "Fertilizer schedule saved!", Toast.LENGTH_SHORT).show();
+                    db.collection("system_data").document("device_control").set(stateUpdate, SetOptions.merge());
+                    db.collection("system_data").document("live_telemetry").set(stateUpdate, SetOptions.merge());
+
+                    Toast.makeText(this, "Fertilizer schedule saved! (" + (enabled ? "Enabled for " + fertilizerStartTime : "Disabled") + ")", Toast.LENGTH_SHORT).show();
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Toast.makeText(this, "Error saving schedule: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    private void testWaterSchedule() {
+        Toast.makeText(this, "⚡ Testing Water Schedule...", Toast.LENGTH_SHORT).show();
+        Map<String, Object> startUpdate = new HashMap<>();
+        startUpdate.put("waterPumpState", "RUNNING");
+        startUpdate.put("waterPump", true);
+        startUpdate.put("water_pump", true);
+        startUpdate.put("lastUpdated", Timestamp.now());
+
+        db.collection("system_data").document("device_control").set(startUpdate, SetOptions.merge());
+        db.collection("system_data").document("live_telemetry").set(startUpdate, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "✅ Water Pump RUNNING for 10s test...", Toast.LENGTH_SHORT).show();
+                    logIrrigationEvent("Water", "RUNNING", "Schedule Test");
+                    AppNotificationManager.getInstance(this).triggerAlertNotification(
+                            "Watering Schedule Test Active",
+                            "Water schedule test started.",
+                            "water",
+                            0, 0, "Normal"
+                    );
+
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                        boolean enabled = switchWaterScheduleEnable.isChecked();
+                        Map<String, Object> stopUpdate = new HashMap<>();
+                        stopUpdate.put("waterPumpState", enabled ? "SCHEDULED" : "OFF");
+                        stopUpdate.put("waterPump", false);
+                        stopUpdate.put("water_pump", false);
+                        stopUpdate.put("lastUpdated", Timestamp.now());
+
+                        db.collection("system_data").document("device_control").set(stopUpdate, SetOptions.merge());
+                        db.collection("system_data").document("live_telemetry").set(stopUpdate, SetOptions.merge());
+
+                        logIrrigationEvent("Water", "COMPLETED", "Schedule Test");
+                        AppNotificationManager.getInstance(ScheduleActivity.this).triggerAlertNotification(
+                                "Watering Schedule Test Completed",
+                                "Water schedule test completed.",
+                                "water",
+                                0, 0, "Normal"
+                        );
+                        Toast.makeText(ScheduleActivity.this, "Water schedule test finished.", Toast.LENGTH_SHORT).show();
+                    }, 10000L);
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to test water pump: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    private void testFertilizerSchedule() {
+        Toast.makeText(this, "⚡ Testing Fertilizer Schedule...", Toast.LENGTH_SHORT).show();
+        Map<String, Object> startUpdate = new HashMap<>();
+        startUpdate.put("fertilizerPumpState", "RUNNING");
+        startUpdate.put("fertilizerPump", true);
+        startUpdate.put("fertilizer_pump", true);
+        startUpdate.put("lastUpdated", Timestamp.now());
+
+        db.collection("system_data").document("device_control").set(startUpdate, SetOptions.merge());
+        db.collection("system_data").document("live_telemetry").set(startUpdate, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "✅ Fertilizer Pump RUNNING for 10s test...", Toast.LENGTH_SHORT).show();
+                    logIrrigationEvent("Fertilizer", "RUNNING", "Schedule Test");
+                    AppNotificationManager.getInstance(this).triggerAlertNotification(
+                            "Fertilizer Schedule Test Active",
+                            "Fertilizer schedule test started.",
+                            "sunlight",
+                            0, 0, "Normal"
+                    );
+
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                        boolean enabled = switchFertilizerScheduleEnable.isChecked();
+                        Map<String, Object> stopUpdate = new HashMap<>();
+                        stopUpdate.put("fertilizerPumpState", enabled ? "SCHEDULED" : "OFF");
+                        stopUpdate.put("fertilizerPump", false);
+                        stopUpdate.put("fertilizer_pump", false);
+                        stopUpdate.put("lastUpdated", Timestamp.now());
+
+                        db.collection("system_data").document("device_control").set(stopUpdate, SetOptions.merge());
+                        db.collection("system_data").document("live_telemetry").set(stopUpdate, SetOptions.merge());
+
+                        logIrrigationEvent("Fertilizer", "COMPLETED", "Schedule Test");
+                        AppNotificationManager.getInstance(ScheduleActivity.this).triggerAlertNotification(
+                                "Fertilizer Schedule Test Completed",
+                                "Fertilizer schedule test completed.",
+                                "sunlight",
+                                0, 0, "Normal"
+                        );
+                        Toast.makeText(ScheduleActivity.this, "Fertilizer schedule test finished.", Toast.LENGTH_SHORT).show();
+                    }, 10000L);
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to test fertilizer pump: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    private void logIrrigationEvent(String type, String action, String source) {
+        String userId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "unknown";
+        String userEmail = mAuth.getCurrentUser() != null && mAuth.getCurrentUser().getEmail() != null ? mAuth.getCurrentUser().getEmail() : userId;
+
+        Map<String, Object> historyRecord = new HashMap<>();
+        historyRecord.put("irrigationType", type);
+        historyRecord.put("action", action);
+        historyRecord.put("timestamp", Timestamp.now());
+        historyRecord.put("startedBy", userEmail);
+        historyRecord.put("source", source);
+
+        db.collection("irrigation_history").add(historyRecord);
     }
 
     private void setupBottomNavigation() {
@@ -227,17 +356,27 @@ public class ScheduleActivity extends AppCompatActivity {
                 if (itemId == R.id.nav_schedule) {
                     return true;
                 } else if (itemId == R.id.nav_home) {
-                    startActivity(new Intent(this, DashboardActivity.class));
+                    Intent intent = new Intent(this, isAdmin ? AdminDashboardActivity.class : DashboardActivity.class);
+                    startActivity(intent);
                     overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
                     finish();
                     return true;
                 } else if (itemId == R.id.nav_history) {
-                    startActivity(new Intent(this, MoistureHistoryActivity.class));
+                    Intent intent = new Intent(this, MoistureHistoryActivity.class);
+                    if (isAdmin) intent.putExtra("is_admin", true);
+                    startActivity(intent);
+                    overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                    finish();
+                    return true;
+                } else if (itemId == R.id.nav_manage) {
+                    Intent intent = new Intent(this, FarmerListActivity.class);
+                    startActivity(intent);
                     overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
                     finish();
                     return true;
                 } else if (itemId == R.id.nav_profile) {
-                    startActivity(new Intent(this, ProfileActivity.class));
+                    Intent intent = new Intent(this, isAdmin ? AdminProfileActivity.class : ProfileActivity.class);
+                    startActivity(intent);
                     overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
                     finish();
                     return true;

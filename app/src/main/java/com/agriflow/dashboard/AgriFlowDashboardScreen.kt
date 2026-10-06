@@ -257,14 +257,26 @@ fun AgriFlowDashboardScreen() {
                     isWaterPumpOn = isWaterPumpOn,
                     onWaterPumpToggle = { newValue ->
                         isWaterPumpOn = newValue
-                        db.collection("system_data").document("live_telemetry")
-                            .update("waterPump", newValue)
+                        val stateStr = if (newValue) "ON" else "OFF"
+                        val map = mapOf<String, Any>(
+                            "waterPump" to newValue,
+                            "water_pump" to newValue,
+                            "waterPumpState" to stateStr
+                        )
+                        db.collection("system_data").document("device_control").update(map)
+                        db.collection("system_data").document("live_telemetry").update(map)
                     },
                     isFertilizerPumpOn = isFertilizerPumpOn,
                     onFertilizerPumpToggle = { newValue ->
                         isFertilizerPumpOn = newValue
-                        db.collection("system_data").document("live_telemetry")
-                            .update("fertilizerPump", newValue)
+                        val stateStr = if (newValue) "ON" else "OFF"
+                        val map = mapOf<String, Any>(
+                            "fertilizerPump" to newValue,
+                            "fertilizer_pump" to newValue,
+                            "fertilizerPumpState" to stateStr
+                        )
+                        db.collection("system_data").document("device_control").update(map)
+                        db.collection("system_data").document("live_telemetry").update(map)
                     }
                 )
                 Spacer(Modifier.height(24.dp))

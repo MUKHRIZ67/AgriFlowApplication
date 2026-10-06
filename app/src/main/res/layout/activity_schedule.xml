@@ -148,6 +148,16 @@
                         android:textStyle="bold"
                         app:backgroundTint="@color/primary_dark_green"
                         app:cornerRadius="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTestWaterSchedule"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="⚡ TEST WATER SCHEDULE NOW"
+                        android:textColor="@color/primary_dark_green"
+                        app:cornerRadius="10dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -253,6 +263,16 @@
                         android:text="SAVE FERTILIZER SCHEDULE"
                         android:textStyle="bold"
                         app:backgroundTint="@color/primary_dark_green"
+                        app:cornerRadius="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTestFertilizerSchedule"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="⚡ TEST FERTILIZER SCHEDULE NOW"
+                        android:textColor="@color/primary_dark_green"
                         app:cornerRadius="10dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

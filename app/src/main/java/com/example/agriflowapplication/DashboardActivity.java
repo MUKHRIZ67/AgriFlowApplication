@@ -27,7 +27,12 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -59,6 +64,26 @@ public class DashboardActivity extends AppCompatActivity {
 
     private String currentWaterState = "OFF";
     private String currentFertilizerState = "OFF";
+
+    // Schedule Runner State
+    private Handler scheduleRunnerHandler;
+    private Runnable scheduleRunnerRunnable;
+
+    private boolean waterScheduleEnabled = false;
+    private String waterScheduleTime = "";
+    private long waterScheduleDurationMins = 5;
+    private String waterRepeatType = "Every Day";
+    private String lastExecutedWaterDate = "";
+    private String lastExecutedWaterMinute = "";
+    private boolean isWaterScheduleRunningCurrently = false;
+
+    private boolean fertScheduleEnabled = false;
+    private String fertScheduleTime = "";
+    private long fertScheduleDurationSecs = 30;
+    private String fertRepeatType = "Every 7 Days";
+    private String lastExecutedFertilizerDate = "";
+    private String lastExecutedFertilizerMinute = "";
+    private boolean isFertScheduleRunningCurrently = false;
 
     private String farmLocation = "Unknown Location";
     private long lastHistoryLogTime = 0;
@@ -316,13 +341,18 @@ public class DashboardActivity extends AppCompatActivity {
 
     private void executeWaterPumpChange(String newState) {
         String userId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "unknown";
+        boolean isPumpOn = "ON".equalsIgnoreCase(newState) || "RUNNING".equalsIgnoreCase(newState);
+
         Map<String, Object> update = new HashMap<>();
         update.put("waterPumpState", newState);
+        update.put("waterPump", isPumpOn);
+        update.put("water_pump", isPumpOn);
         update.put("lastUpdated", Timestamp.now());
         update.put("updatedBy", userId);
 
-        db.collection("system_data").document("device_control").update(update)
+        db.collection("system_data").document("device_control").set(update, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
+                    db.collection("system_data").document("live_telemetry").set(update, com.google.firebase.firestore.SetOptions.merge());
                     Toast.makeText(this, "Water irrigation set to " + newState, Toast.LENGTH_SHORT).show();
                     logIrrigationEvent("Water", newState, "Manual");
                 })
@@ -364,13 +394,18 @@ public class DashboardActivity extends AppCompatActivity {
 
     private void executeFertilizerPumpChange(String newState) {
         String userId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "unknown";
+        boolean isPumpOn = "ON".equalsIgnoreCase(newState) || "RUNNING".equalsIgnoreCase(newState);
+
         Map<String, Object> update = new HashMap<>();
         update.put("fertilizerPumpState", newState);
+        update.put("fertilizerPump", isPumpOn);
+        update.put("fertilizer_pump", isPumpOn);
         update.put("lastUpdated", Timestamp.now());
         update.put("updatedBy", userId);
 
-        db.collection("system_data").document("device_control").update(update)
+        db.collection("system_data").document("device_control").set(update, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
+                    db.collection("system_data").document("live_telemetry").set(update, com.google.firebase.firestore.SetOptions.merge());
                     Toast.makeText(this, "Fertilizer irrigation set to " + newState, Toast.LENGTH_SHORT).show();
                     logIrrigationEvent("Fertilizer", newState, "Manual");
                 })
@@ -402,6 +437,13 @@ public class DashboardActivity extends AppCompatActivity {
                         Long duration = snapshot.getLong("durationMinutes");
                         String repeat = snapshot.getString("repeatType");
                         Boolean enabled = snapshot.getBoolean("enabled");
+                        String lastExec = snapshot.getString("lastExecutedDate");
+
+                        if (enabled != null) waterScheduleEnabled = enabled;
+                        if (time != null) waterScheduleTime = time;
+                        if (duration != null) waterScheduleDurationMins = duration;
+                        if (repeat != null) waterRepeatType = repeat;
+                        if (lastExec != null) lastExecutedWaterDate = lastExec;
 
                         if (tvWaterScheduleTime != null && time != null) tvWaterScheduleTime.setText(time);
                         if (tvWaterScheduleDetail != null && duration != null) {
@@ -426,6 +468,13 @@ public class DashboardActivity extends AppCompatActivity {
                         Long duration = snapshot.getLong("durationSeconds");
                         String repeat = snapshot.getString("repeatType");
                         Boolean enabled = snapshot.getBoolean("enabled");
+                        String lastExec = snapshot.getString("lastExecutedDate");
+
+                        if (enabled != null) fertScheduleEnabled = enabled;
+                        if (time != null) fertScheduleTime = time;
+                        if (duration != null) fertScheduleDurationSecs = duration;
+                        if (repeat != null) fertRepeatType = repeat;
+                        if (lastExec != null) lastExecutedFertilizerDate = lastExec;
 
                         if (tvFertilizerScheduleTime != null && time != null) tvFertilizerScheduleTime.setText(time);
                         if (tvFertilizerScheduleDetail != null && duration != null) {
@@ -442,6 +491,174 @@ public class DashboardActivity extends AppCompatActivity {
                         }
                     }
                 });
+
+        startAutomatedScheduleCheckRunner();
+    }
+
+    private void startAutomatedScheduleCheckRunner() {
+        if (scheduleRunnerHandler != null) return;
+        scheduleRunnerHandler = new Handler(Looper.getMainLooper());
+        scheduleRunnerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                checkAndExecuteSchedules();
+                if (scheduleRunnerHandler != null) {
+                    scheduleRunnerHandler.postDelayed(this, 15000);
+                }
+            }
+        };
+        scheduleRunnerHandler.post(scheduleRunnerRunnable);
+    }
+
+    private boolean shouldRunScheduleToday(String lastExecutedDateStr, String repeatType) {
+        if (lastExecutedDateStr == null || lastExecutedDateStr.isEmpty()) {
+            return true;
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        try {
+            Date lastDate = sdf.parse(lastExecutedDateStr);
+            Date todayDate = sdf.parse(sdf.format(new Date()));
+            if (lastDate == null || todayDate == null) return true;
+
+            long diffInMillis = todayDate.getTime() - lastDate.getTime();
+            long daysDiff = diffInMillis / (24 * 60 * 60 * 1000L);
+
+            int requiredDays = 1;
+            if (repeatType != null) {
+                String lower = repeatType.toLowerCase(Locale.US);
+                if (lower.contains("2 days")) {
+                    requiredDays = 2;
+                } else if (lower.contains("3 days")) {
+                    requiredDays = 3;
+                } else if (lower.contains("7 days")) {
+                    requiredDays = 7;
+                } else if (lower.contains("14 days")) {
+                    requiredDays = 14;
+                } else {
+                    requiredDays = 1;
+                }
+            }
+            return daysDiff >= requiredDays;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    private void checkAndExecuteSchedules() {
+        SimpleDateFormat sdfTime = new SimpleDateFormat("hh:mm a", Locale.US);
+        SimpleDateFormat sdfMinute = new SimpleDateFormat("yyyy-MM-dd hh:mm a", Locale.US);
+        SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+
+        Date now = new Date();
+        String currentTimeFormatted = sdfTime.format(now);
+        String currentMinuteFormatted = sdfMinute.format(now);
+        String currentDateFormatted = sdfDate.format(now);
+
+        // Water Schedule Check
+        if (waterScheduleEnabled && !waterScheduleTime.isEmpty()) {
+            if (currentTimeFormatted.equalsIgnoreCase(waterScheduleTime.trim())) {
+                if (!isWaterScheduleRunningCurrently && !currentMinuteFormatted.equals(lastExecutedWaterMinute)) {
+                    if (shouldRunScheduleToday(lastExecutedWaterDate, waterRepeatType)) {
+                        isWaterScheduleRunningCurrently = true;
+                        lastExecutedWaterMinute = currentMinuteFormatted;
+                        lastExecutedWaterDate = currentDateFormatted;
+
+                        db.collection("schedules").document("water").update("lastExecutedDate", currentDateFormatted);
+                        Log.d("AgriFlow", "⏰ Water Schedule Match! Turning Water Pump ON for " + waterScheduleDurationMins + " mins.");
+                        
+                        Map<String, Object> waterStartUpdate = new HashMap<>();
+                        waterStartUpdate.put("waterPumpState", "RUNNING");
+                        waterStartUpdate.put("waterPump", true);
+                        waterStartUpdate.put("water_pump", true);
+                        waterStartUpdate.put("lastUpdated", Timestamp.now());
+                        db.collection("system_data").document("device_control").update(waterStartUpdate);
+                        db.collection("system_data").document("live_telemetry").update(waterStartUpdate);
+
+                        logIrrigationEvent("Water", "RUNNING", "Automated Schedule");
+
+                        AppNotificationManager.getInstance(this).triggerAlertNotification(
+                                "Watering Schedule Active",
+                                "Scheduled water irrigation started at " + currentTimeFormatted + " for " + waterScheduleDurationMins + " minutes.",
+                                "water",
+                                0, 0, "Normal"
+                        );
+
+                        long durationMillis = waterScheduleDurationMins * 60 * 1000L;
+                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                            Map<String, Object> waterStopUpdate = new HashMap<>();
+                            waterStopUpdate.put("waterPumpState", "SCHEDULED");
+                            waterStopUpdate.put("waterPump", false);
+                            waterStopUpdate.put("water_pump", false);
+                            waterStopUpdate.put("lastUpdated", Timestamp.now());
+                            db.collection("system_data").document("device_control").update(waterStopUpdate);
+                            db.collection("system_data").document("live_telemetry").update(waterStopUpdate);
+
+                            isWaterScheduleRunningCurrently = false;
+                            logIrrigationEvent("Water", "COMPLETED", "Automated Schedule");
+                            AppNotificationManager.getInstance(DashboardActivity.this).triggerAlertNotification(
+                                    "Watering Schedule Completed",
+                                    "Scheduled water irrigation completed.",
+                                    "water",
+                                    0, 0, "Normal"
+                            );
+                        }, durationMillis);
+                    }
+                }
+            }
+        }
+
+        // Fertilizer Schedule Check
+        if (fertScheduleEnabled && !fertScheduleTime.isEmpty()) {
+            if (currentTimeFormatted.equalsIgnoreCase(fertScheduleTime.trim())) {
+                if (!isFertScheduleRunningCurrently && !currentMinuteFormatted.equals(lastExecutedFertilizerMinute)) {
+                    if (shouldRunScheduleToday(lastExecutedFertilizerDate, fertRepeatType)) {
+                        isFertScheduleRunningCurrently = true;
+                        lastExecutedFertilizerMinute = currentMinuteFormatted;
+                        lastExecutedFertilizerDate = currentDateFormatted;
+
+                        db.collection("schedules").document("fertilizer").update("lastExecutedDate", currentDateFormatted);
+                        Log.d("AgriFlow", "⏰ Fertilizer Schedule Match! Turning Fertilizer Pump ON for " + fertScheduleDurationSecs + " secs.");
+                        
+                        Map<String, Object> fertStartUpdate = new HashMap<>();
+                        fertStartUpdate.put("fertilizerPumpState", "RUNNING");
+                        fertStartUpdate.put("fertilizerPump", true);
+                        fertStartUpdate.put("fertilizer_pump", true);
+                        fertStartUpdate.put("lastUpdated", Timestamp.now());
+                        db.collection("system_data").document("device_control").update(fertStartUpdate);
+                        db.collection("system_data").document("live_telemetry").update(fertStartUpdate);
+
+                        logIrrigationEvent("Fertilizer", "RUNNING", "Automated Schedule");
+
+                        AppNotificationManager.getInstance(this).triggerAlertNotification(
+                                "Fertilizer Schedule Active",
+                                "Scheduled fertilizer distribution started at " + currentTimeFormatted + " for " + fertScheduleDurationSecs + " seconds.",
+                                "sunlight",
+                                0, 0, "Normal"
+                        );
+
+                        long durationMillis = fertScheduleDurationSecs * 1000L;
+                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                            Map<String, Object> fertStopUpdate = new HashMap<>();
+                            fertStopUpdate.put("fertilizerPumpState", "SCHEDULED");
+                            fertStopUpdate.put("fertilizerPump", false);
+                            fertStopUpdate.put("fertilizer_pump", false);
+                            fertStopUpdate.put("lastUpdated", Timestamp.now());
+                            db.collection("system_data").document("device_control").update(fertStopUpdate);
+                            db.collection("system_data").document("live_telemetry").update(fertStopUpdate);
+
+                            isFertScheduleRunningCurrently = false;
+                            logIrrigationEvent("Fertilizer", "COMPLETED", "Automated Schedule");
+                            AppNotificationManager.getInstance(DashboardActivity.this).triggerAlertNotification(
+                                    "Fertilizer Schedule Completed",
+                                    "Scheduled fertilizer distribution completed.",
+                                    "sunlight",
+                                    0, 0, "Normal"
+                            );
+                        }, durationMillis);
+                    }
+                }
+            }
+        }
     }
 
     private void requestNotificationPermission() {
@@ -587,15 +804,18 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void updateTemperatureIndicator(double temp) {
+        if (vTempIndicator == null) return;
         float min = 0f;
         float max = 50f;
         float bias = (float) ((temp - min) / (max - min));
         bias = Math.max(0f, Math.min(1f, bias));
 
-        androidx.constraintlayout.widget.ConstraintLayout.LayoutParams params =
-                (androidx.constraintlayout.widget.ConstraintLayout.LayoutParams) vTempIndicator.getLayoutParams();
-        params.horizontalBias = bias;
-        vTempIndicator.setLayoutParams(params);
+        if (vTempIndicator.getLayoutParams() instanceof androidx.constraintlayout.widget.ConstraintLayout.LayoutParams) {
+            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams params =
+                    (androidx.constraintlayout.widget.ConstraintLayout.LayoutParams) vTempIndicator.getLayoutParams();
+            params.horizontalBias = bias;
+            vTempIndicator.setLayoutParams(params);
+        }
     }
 
     private void updateHumidityStatus(double humidity) {
@@ -740,6 +960,9 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (scheduleRunnerHandler != null && scheduleRunnerRunnable != null) {
+            scheduleRunnerHandler.removeCallbacks(scheduleRunnerRunnable);
+        }
         if (telemetryListener != null) telemetryListener.remove();
         if (notificationListener != null) notificationListener.remove();
         if (deviceControlListener != null) deviceControlListener.remove();
