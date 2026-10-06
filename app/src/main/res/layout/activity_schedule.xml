@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_light_cream">
+    android:background="@color/iot_bg">
 
     <!-- Top App Bar -->
     <RelativeLayout
@@ -20,14 +20,15 @@
             android:layout_centerVertical="true"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_menu_revert"
-            app:tint="@color/on_surface" />
+            app:tint="@color/iot_on_surface"
+            android:contentDescription="Back" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="Irrigation Schedule"
-            android:textColor="@color/on_surface"
+            android:textColor="@color/iot_on_surface"
             android:textSize="18sp"
             android:textStyle="bold" />
     </RelativeLayout>
@@ -50,7 +51,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="@color/surface_container"
+                app:cardBackgroundColor="@color/iot_surface"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 
@@ -70,7 +71,7 @@
                             android:layout_height="wrap_content"
                             android:layout_centerVertical="true"
                             android:text="Watering Schedule"
-                            android:textColor="@color/on_surface"
+                            android:textColor="@color/iot_on_surface"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
@@ -87,7 +88,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="Start Time"
-                        android:textColor="@color/on_surface_variant"
+                        android:textColor="@color/iot_on_surface_variant"
                         android:textSize="12sp"
                         android:textStyle="bold" />
 
@@ -98,7 +99,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:text="08:00 AM"
-                        android:textColor="@color/on_surface"
+                        android:textColor="@color/iot_on_surface"
+                        app:strokeColor="@color/iot_border"
                         app:cornerRadius="10dp" />
 
                     <TextView
@@ -106,7 +108,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:text="Duration (minutes)"
-                        android:textColor="@color/on_surface_variant"
+                        android:textColor="@color/iot_on_surface_variant"
                         android:textSize="12sp"
                         android:textStyle="bold" />
 
@@ -115,11 +117,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_schedule_time"
+                        android:background="@drawable/iot_bg_schedule_time"
                         android:inputType="number"
                         android:paddingHorizontal="12dp"
                         android:text="5"
-                        android:textColor="@color/on_surface"
+                        android:textColor="@color/iot_on_surface"
                         android:textSize="14sp" />
 
                     <TextView
@@ -127,7 +129,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:text="Repeat Frequency"
-                        android:textColor="@color/on_surface_variant"
+                        android:textColor="@color/iot_on_surface_variant"
                         android:textSize="12sp"
                         android:textStyle="bold" />
 
@@ -136,7 +138,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_schedule_time"
+                        android:background="@drawable/iot_bg_schedule_time"
                         android:paddingHorizontal="12dp" />
 
                     <com.google.android.material.button.MaterialButton
@@ -146,7 +148,7 @@
                         android:layout_marginTop="16dp"
                         android:text="SAVE WATER SCHEDULE"
                         android:textStyle="bold"
-                        app:backgroundTint="@color/primary_dark_green"
+                        app:backgroundTint="@color/iot_primary"
                         app:cornerRadius="10dp" />
 
                     <com.google.android.material.button.MaterialButton
@@ -156,8 +158,9 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="⚡ TEST WATER SCHEDULE NOW"
-                        android:textColor="@color/primary_dark_green"
-                        app:cornerRadius="10dp" />
+                        android:textColor="@color/iot_secondary"
+                        app:cornerRadius="10dp"
+                        app:strokeColor="@color/iot_border" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -166,7 +169,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="@color/surface_container"
+                app:cardBackgroundColor="@color/iot_surface"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 
@@ -186,7 +189,7 @@
                             android:layout_height="wrap_content"
                             android:layout_centerVertical="true"
                             android:text="Fertilizer Schedule"
-                            android:textColor="@color/on_surface"
+                            android:textColor="@color/iot_on_surface"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
@@ -203,7 +206,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="Start Time"
-                        android:textColor="@color/on_surface_variant"
+                        android:textColor="@color/iot_on_surface_variant"
                         android:textSize="12sp"
                         android:textStyle="bold" />
 
@@ -214,7 +217,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:text="08:30 AM"
-                        android:textColor="@color/on_surface"
+                        android:textColor="@color/iot_on_surface"
+                        app:strokeColor="@color/iot_border"
                         app:cornerRadius="10dp" />
 
                     <TextView
@@ -222,7 +226,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:text="Duration (seconds)"
-                        android:textColor="@color/on_surface_variant"
+                        android:textColor="@color/iot_on_surface_variant"
                         android:textSize="12sp"
                         android:textStyle="bold" />
 
@@ -231,11 +235,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_schedule_time"
+                        android:background="@drawable/iot_bg_schedule_time"
                         android:inputType="number"
                         android:paddingHorizontal="12dp"
                         android:text="30"
-                        android:textColor="@color/on_surface"
+                        android:textColor="@color/iot_on_surface"
                         android:textSize="14sp" />
 
                     <TextView
@@ -243,7 +247,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:text="Repeat Frequency"
-                        android:textColor="@color/on_surface_variant"
+                        android:textColor="@color/iot_on_surface_variant"
                         android:textSize="12sp"
                         android:textStyle="bold" />
 
@@ -252,7 +256,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_schedule_time"
+                        android:background="@drawable/iot_bg_schedule_time"
                         android:paddingHorizontal="12dp" />
 
                     <com.google.android.material.button.MaterialButton
@@ -262,7 +266,7 @@
                         android:layout_marginTop="16dp"
                         android:text="SAVE FERTILIZER SCHEDULE"
                         android:textStyle="bold"
-                        app:backgroundTint="@color/primary_dark_green"
+                        app:backgroundTint="@color/iot_primary"
                         app:cornerRadius="10dp" />
 
                     <com.google.android.material.button.MaterialButton
@@ -272,8 +276,9 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="⚡ TEST FERTILIZER SCHEDULE NOW"
-                        android:textColor="@color/primary_dark_green"
-                        app:cornerRadius="10dp" />
+                        android:textColor="@color/iot_secondary"
+                        app:cornerRadius="10dp"
+                        app:strokeColor="@color/iot_border" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -285,9 +290,9 @@
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/bg_light_cream"
-        app:itemIconTint="@color/nav_item_color_state"
-        app:itemTextColor="@color/nav_item_color_state"
+        android:background="@color/iot_bg"
+        app:itemIconTint="@color/iot_nav_item_color_state"
+        app:itemTextColor="@color/iot_nav_item_color_state"
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 

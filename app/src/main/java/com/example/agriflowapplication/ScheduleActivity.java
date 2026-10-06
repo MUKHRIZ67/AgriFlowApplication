@@ -349,6 +349,10 @@ public class ScheduleActivity extends AppCompatActivity {
     private void setupBottomNavigation() {
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         if (bottomNavigationView != null) {
+            if (isAdmin) {
+                bottomNavigationView.getMenu().clear();
+                bottomNavigationView.inflateMenu(R.menu.admin_bottom_nav_menu);
+            }
             bottomNavigationView.setSelectedItemId(R.id.nav_schedule);
 
             bottomNavigationView.setOnItemSelectedListener(item -> {

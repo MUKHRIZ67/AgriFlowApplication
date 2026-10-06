@@ -102,6 +102,11 @@ public class ProfileActivity extends AppCompatActivity {
                 overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
                 finish();
                 return true;
+            } else if (itemId == R.id.nav_schedule) {
+                startActivity(new Intent(this, ScheduleActivity.class));
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                finish();
+                return true;
             } else if (itemId == R.id.nav_profile) {
                 return true;
             }

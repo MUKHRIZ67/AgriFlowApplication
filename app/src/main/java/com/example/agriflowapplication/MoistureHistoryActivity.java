@@ -535,12 +535,24 @@ public class MoistureHistoryActivity extends AppCompatActivity {
 
     private void setupBottomNavigation() {
         BottomNavigationView bnv = findViewById(R.id.bottom_navigation);
+        boolean isAdmin = getIntent().getBooleanExtra("is_admin", false);
+        if (isAdmin) {
+            bnv.getMenu().clear();
+            bnv.inflateMenu(R.menu.admin_bottom_nav_menu);
+        }
         bnv.setSelectedItemId(R.id.nav_history);
         bnv.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_history) return true;
             if (id == R.id.nav_home) {
                 navigateHome();
+                return true;
+            } else if (id == R.id.nav_schedule) {
+                Intent intent = new Intent(this, ScheduleActivity.class);
+                intent.putExtra("is_admin", isAdmin);
+                startActivity(intent);
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                finish();
                 return true;
             } else if (id == R.id.nav_profile) {
                 navigateProfile();

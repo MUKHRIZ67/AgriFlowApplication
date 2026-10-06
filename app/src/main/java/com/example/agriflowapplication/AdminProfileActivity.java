@@ -99,6 +99,13 @@ public class AdminProfileActivity extends AppCompatActivity {
                 overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
                 finish();
                 return true;
+            } else if (itemId == R.id.nav_schedule) {
+                Intent intent = new Intent(this, ScheduleActivity.class);
+                intent.putExtra("is_admin", true);
+                startActivity(intent);
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                finish();
+                return true;
             } else if (itemId == R.id.nav_profile) {
                 return true;
             }
