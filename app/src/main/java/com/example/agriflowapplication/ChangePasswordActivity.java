@@ -26,14 +26,26 @@ public class ChangePasswordActivity extends AppCompatActivity {
     private Button btnChangePassword;
     private ProgressBar progressBar;
     private FirebaseAuth mAuth;
+    private boolean isAdmin = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        isAdmin = getIntent().getBooleanExtra("is_admin", false);
+        if (!isAdmin) {
+            String role = getSharedPreferences("AgriFlowPrefs", MODE_PRIVATE).getString("user_role", "farmer");
+            if ("admin".equalsIgnoreCase(role)) {
+                isAdmin = true;
+            }
+        }
+
+        if (isAdmin) {
+            setTheme(R.style.Theme_AgriFlow_Admin);
+        }
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_change_password);
 
         mAuth = FirebaseManager.getInstance().getAuth();
-        checkUserRole();
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -49,61 +61,65 @@ public class ChangePasswordActivity extends AppCompatActivity {
         btnChangePassword = findViewById(R.id.btnChangePassword);
         progressBar = findViewById(R.id.progressBar);
 
+        if (isAdmin) {
+            applyAdminTheme();
+        }
+
         btnChangePassword.setOnClickListener(v -> validateAndConfirm());
     }
 
-    private void checkUserRole() {
-        if (mAuth.getCurrentUser() != null) {
-            FirebaseManager.getInstance().getDb().collection("users")
-                .document(mAuth.getCurrentUser().getUid()).get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists() && "admin".equalsIgnoreCase(documentSnapshot.getString("role"))) {
-                        applyAdminTheme();
-                    }
-                });
-        }
-    }
-
     private void applyAdminTheme() {
-        findViewById(android.R.id.content).getRootView().setBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_bg));
-        
-        ViewGroup root = (ViewGroup) findViewById(android.R.id.content);
-        updateColorsRecursively(root);
+        View mainLayout = findViewById(R.id.main_layout);
+        if (mainLayout != null) {
+            mainLayout.setBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_bg));
+        }
 
-        btnChangePassword.setBackgroundTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.iot_primary)));
-        btnChangePassword.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.white));
-        
-        progressBar.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.iot_primary)));
-        
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitleTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
-        toolbar.setNavigationIconTint(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
+        if (toolbar != null) {
+            toolbar.setTitleTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
+            toolbar.setNavigationIconTint(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
+        }
+
+        TextView tvTitle = findViewById(R.id.tvTitle);
+        if (tvTitle != null) {
+            tvTitle.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
+        }
+
+        TextView tvSubtitle = findViewById(R.id.tvSubtitle);
+        if (tvSubtitle != null) {
+            tvSubtitle.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface_variant));
+        }
+
+        TextInputLayout tilCurrent = findViewById(R.id.tilCurrentPassword);
+        TextInputLayout tilNew = findViewById(R.id.tilNewPassword);
+        TextInputLayout tilConfirm = findViewById(R.id.tilConfirmPassword);
+
+        styleTextInputLayoutAdmin(tilCurrent);
+        styleTextInputLayoutAdmin(tilNew);
+        styleTextInputLayoutAdmin(tilConfirm);
+
+        if (etCurrentPassword != null) etCurrentPassword.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
+        if (etNewPassword != null) etNewPassword.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
+        if (etConfirmPassword != null) etConfirmPassword.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
+
+        if (btnChangePassword != null) {
+            btnChangePassword.setBackgroundTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.iot_primary)));
+            btnChangePassword.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.white));
+        }
+
+        if (progressBar != null) {
+            progressBar.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.iot_primary)));
+        }
     }
 
-    private void updateColorsRecursively(ViewGroup group) {
-        for (int i = 0; i < group.getChildCount(); i++) {
-            View child = group.getChildAt(i);
-            if (child instanceof TextInputLayout) {
-                TextInputLayout layout = (TextInputLayout) child;
-                layout.setBoxBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_surface_high));
-                layout.setBoxStrokeColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_primary));
-                layout.setHintTextColor(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.iot_primary)));
-                layout.setDefaultHintTextColor(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface_variant)));
-                layout.setPlaceholderTextColor(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface_variant)));
-                if (layout.getEditText() != null) {
-                    layout.getEditText().setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
-                }
-            } else if (child instanceof TextView) {
-                TextView tv = (TextView) child;
-                if (tv.getTextSize() > 20 * getResources().getDisplayMetrics().scaledDensity) {
-                    tv.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
-                } else {
-                    tv.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface_secondary));
-                }
-            } else if (child instanceof ViewGroup) {
-                updateColorsRecursively((ViewGroup) child);
-            }
-        }
+    private void styleTextInputLayoutAdmin(TextInputLayout til) {
+        if (til == null) return;
+        til.setBoxBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_surface_high));
+        til.setBoxStrokeColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_primary));
+        til.setHintTextColor(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.iot_primary)));
+        til.setDefaultHintTextColor(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface_variant)));
+        til.setPlaceholderTextColor(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface_variant)));
+        til.setEndIconTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface_variant)));
     }
 
     private void validateAndConfirm() {
