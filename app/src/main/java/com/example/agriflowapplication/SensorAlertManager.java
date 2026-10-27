@@ -209,7 +209,10 @@ public class SensorAlertManager {
         FirebaseFirestore.getInstance().collection("notifications").add(record);
 
         // 2. Show Push Notification
-        Intent intent = new Intent(context, DashboardActivity.class);
+        String role = context.getSharedPreferences("AgriFlowPrefs", Context.MODE_PRIVATE).getString("user_role", "farmer");
+        Class<?> targetActivity = "admin".equalsIgnoreCase(role) ? AdminDashboardActivity.class : DashboardActivity.class;
+
+        Intent intent = new Intent(context, targetActivity);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 

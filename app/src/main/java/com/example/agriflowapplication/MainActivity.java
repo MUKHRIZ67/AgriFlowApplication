@@ -97,12 +97,14 @@ public class MainActivity extends AppCompatActivity {
                     Intent intent;
                     if (documentSnapshot.exists()) {
                         String role = documentSnapshot.getString("role");
+                        getSharedPreferences("AgriFlowPrefs", MODE_PRIVATE).edit().putString("user_role", role).apply();
                         if ("admin".equalsIgnoreCase(role)) {
                             intent = new Intent(MainActivity.this, AdminDashboardActivity.class);
                         } else {
                             intent = new Intent(MainActivity.this, DashboardActivity.class);
                         }
                     } else {
+                        getSharedPreferences("AgriFlowPrefs", MODE_PRIVATE).edit().putString("user_role", "farmer").apply();
                         // If no profile found, default to farmer dashboard
                         intent = new Intent(MainActivity.this, DashboardActivity.class);
                     }

@@ -25,11 +25,28 @@ public class NotificationsActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private String userId;
     private boolean showOnlyUnread = false;
+    private boolean isAdmin = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        isAdmin = getIntent().getBooleanExtra("is_admin", false);
+        if (!isAdmin) {
+            String role = getSharedPreferences("AgriFlowPrefs", MODE_PRIVATE).getString("user_role", "farmer");
+            if ("admin".equalsIgnoreCase(role)) {
+                isAdmin = true;
+            }
+        }
+
+        if (isAdmin) {
+            setTheme(R.style.Theme_AgriFlow_Admin);
+        }
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notifications);
+
+        if (isAdmin) {
+            applyAdminTheme();
+        }
 
         db = FirebaseManager.getInstance().getDb();
         userId = FirebaseAuth.getInstance().getUid();
@@ -46,7 +63,7 @@ public class NotificationsActivity extends AppCompatActivity {
         rvNotifications.setLayoutManager(new LinearLayoutManager(this));
         notifications = new ArrayList<>();
         displayedNotifications = new ArrayList<>();
-        adapter = new NotificationAdapter(displayedNotifications, this::handleNotificationClick);
+        adapter = new NotificationAdapter(displayedNotifications, this::handleNotificationClick, isAdmin);
         rvNotifications.setAdapter(adapter);
 
         // Handle Toolbar Back
@@ -109,6 +126,24 @@ public class NotificationsActivity extends AppCompatActivity {
         emptyState.setVisibility(displayedNotifications.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
+    private void applyAdminTheme() {
+        View mainLayout = findViewById(R.id.main_layout);
+        if (mainLayout != null) {
+            mainLayout.setBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_bg));
+        }
+
+        com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            toolbar.setTitleTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
+            toolbar.setNavigationIconTint(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface));
+        }
+
+        android.widget.TextView tvEmptyMsg = findViewById(R.id.tvEmptyMsg);
+        if (tvEmptyMsg != null) {
+            tvEmptyMsg.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.iot_on_surface_variant));
+        }
+    }
+
     private void handleNotificationClick(NotificationRecord notification) {
         // Mark as read in Firestore
         if (!notification.isRead()) {
@@ -120,8 +155,16 @@ public class NotificationsActivity extends AppCompatActivity {
                     });
         }
 
-        // Navigate to Dashboard/Telemetry
-        Intent intent = new Intent(this, DashboardActivity.class);
+        // Navigate to Dashboard/Telemetry based on user role
+        boolean isAdmin = getIntent().getBooleanExtra("is_admin", false);
+        if (!isAdmin) {
+            String role = getSharedPreferences("AgriFlowPrefs", MODE_PRIVATE).getString("user_role", "farmer");
+            if ("admin".equalsIgnoreCase(role)) {
+                isAdmin = true;
+            }
+        }
+
+        Intent intent = new Intent(this, isAdmin ? AdminDashboardActivity.class : DashboardActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
     }

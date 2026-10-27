@@ -7,21 +7,29 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.card.MaterialCardView;
 import java.util.List;
 
 public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.ViewHolder> {
 
     private final List<NotificationRecord> notifications;
     private final OnNotificationClickListener listener;
+    private final boolean isAdmin;
 
     public interface OnNotificationClickListener {
         void onNotificationClick(NotificationRecord notification);
     }
 
     public NotificationAdapter(List<NotificationRecord> notifications, OnNotificationClickListener listener) {
+        this(notifications, listener, false);
+    }
+
+    public NotificationAdapter(List<NotificationRecord> notifications, OnNotificationClickListener listener, boolean isAdmin) {
         this.notifications = notifications;
         this.listener = listener;
+        this.isAdmin = isAdmin;
     }
 
     @NonNull
@@ -50,6 +58,19 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 Color.parseColor("#E53935") : Color.parseColor("#FB8C00");
         holder.statusIndicator.setBackgroundColor(color);
 
+        // Apply theme styling
+        if (isAdmin) {
+            holder.cardNotification.setCardBackgroundColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.iot_surface));
+            holder.tvTitle.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.iot_on_surface));
+            holder.tvMessage.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.iot_on_surface_variant));
+            holder.tvTimestamp.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.iot_on_surface_variant));
+        } else {
+            holder.cardNotification.setCardBackgroundColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.surface_container));
+            holder.tvTitle.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.on_surface));
+            holder.tvMessage.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.on_surface_variant));
+            holder.tvTimestamp.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.on_surface_variant));
+        }
+
         // Unread dot
         holder.ivUnreadDot.setVisibility(notification.isRead() ? View.GONE : View.VISIBLE);
 
@@ -62,11 +83,13 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
+        MaterialCardView cardNotification;
         TextView tvTitle, tvMessage, tvTimestamp;
         View statusIndicator, ivUnreadDot;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+            cardNotification = itemView.findViewById(R.id.cardNotification);
             tvTitle = itemView.findViewById(R.id.tvTitle);
             tvMessage = itemView.findViewById(R.id.tvMessage);
             tvTimestamp = itemView.findViewById(R.id.tvTimestamp);
