@@ -16,6 +16,7 @@ public class SensorAlertConstants {
     // LIGHT INTENSITY
     public static final double LIGHT_WARNING_HIGH = 85.0;
     public static final double LIGHT_CRITICAL_HIGH = 95.0;
+    public static final double DEFAULT_LIGHT_THRESHOLD = 70.0;
 
     // SOIL MOISTURE
     public static final double SOIL_CRITICAL_LOW = 25.0;

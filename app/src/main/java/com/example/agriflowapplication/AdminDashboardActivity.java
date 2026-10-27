@@ -3,8 +3,11 @@ package com.example.agriflowapplication;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,9 +30,9 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
-import android.util.Log;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -56,15 +59,26 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private MaterialSwitch switchWaterPump, switchFertilizerPump;
     private MaterialButton btnStartWater, btnStopWater, btnStartFertilizer, btnStopFertilizer;
 
+    // Auto Light Irrigation Views
+    private TextView tvCurrentLightIntensity, tvLightThresholdDisplay, tvAutoLightPumpStatus, tvIrrigationMode, tvSelectedLightThreshold;
+    private MaterialSwitch switchIrrigationMode;
+    private SeekBar seekBarLightThreshold;
+    private MaterialButton btnSaveLightThreshold;
+
+    private double configuredLightThreshold = 70.0;
+    private String currentIrrigationMode = "AUTOMATIC";
+
     // Schedule Views
     private TextView tvWaterScheduleTime, tvWaterScheduleDetail, tvWaterScheduleStatus;
     private TextView tvFertilizerScheduleTime, tvFertilizerScheduleDetail, tvFertilizerScheduleStatus;
 
     private String currentWaterState = "OFF";
     private String currentFertilizerState = "OFF";
+    private String activeWaterIrrigationId = "";
+    private String activeFertilizerIrrigationId = "";
 
     // Schedule Runner State
-    private android.os.Handler scheduleRunnerHandler;
+    private Handler scheduleRunnerHandler;
     private Runnable scheduleRunnerRunnable;
 
     private boolean waterScheduleEnabled = false;
@@ -147,6 +161,18 @@ public class AdminDashboardActivity extends AppCompatActivity {
         if (btnStartFertilizer != null) btnStartFertilizer.setOnClickListener(v -> handleStartFertilizer());
         if (btnStopFertilizer != null) btnStopFertilizer.setOnClickListener(v -> handleStopFertilizer());
 
+        // Auto Light Irrigation Views
+        tvCurrentLightIntensity = findViewById(R.id.tvCurrentLightIntensity);
+        tvLightThresholdDisplay = findViewById(R.id.tvLightThresholdDisplay);
+        tvAutoLightPumpStatus = findViewById(R.id.tvAutoLightPumpStatus);
+        tvIrrigationMode = findViewById(R.id.tvIrrigationMode);
+        tvSelectedLightThreshold = findViewById(R.id.tvSelectedLightThreshold);
+        switchIrrigationMode = findViewById(R.id.switchIrrigationMode);
+        seekBarLightThreshold = findViewById(R.id.seekBarLightThreshold);
+        btnSaveLightThreshold = findViewById(R.id.btnSaveLightThreshold);
+
+        setupAutoLightControls();
+
         // Schedule Controls
         tvWaterScheduleTime = findViewById(R.id.tvWaterScheduleTime);
         tvWaterScheduleDetail = findViewById(R.id.tvWaterScheduleDetail);
@@ -157,11 +183,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         View btnConfigureSchedule = findViewById(R.id.btnConfigureSchedule);
         if (btnConfigureSchedule != null) {
-            btnConfigureSchedule.setOnClickListener(v -> {
-                Intent intent = new Intent(AdminDashboardActivity.this, ScheduleActivity.class);
-                intent.putExtra("is_admin", true);
-                startActivity(intent);
-            });
+            btnConfigureSchedule.setOnClickListener(v -> startActivity(new Intent(AdminDashboardActivity.this, ScheduleActivity.class)));
         }
 
         View btnAiAssistantTop = findViewById(R.id.btnAiAssistantTop);
@@ -245,6 +267,71 @@ public class AdminDashboardActivity extends AppCompatActivity {
         findViewById(R.id.btnLogout).setOnClickListener(v -> showLogoutConfirmation());
 
         startNotificationListener();
+        startScheduleRunner();
+    }
+
+    private void setupAutoLightControls() {
+        if (seekBarLightThreshold != null && tvSelectedLightThreshold != null) {
+            seekBarLightThreshold.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    tvSelectedLightThreshold.setText(progress + "%");
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {}
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {}
+            });
+        }
+
+        if (btnSaveLightThreshold != null) {
+            btnSaveLightThreshold.setOnClickListener(v -> saveLightThreshold());
+        }
+
+        if (switchIrrigationMode != null) {
+            switchIrrigationMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                String mode = isChecked ? "AUTOMATIC" : "MANUAL";
+                updateIrrigationModeInFirestore(mode);
+            });
+        }
+    }
+
+    private void saveLightThreshold() {
+        if (seekBarLightThreshold == null) return;
+        int thresholdVal = seekBarLightThreshold.getProgress();
+
+        if (thresholdVal < 0 || thresholdVal > 100) {
+            Toast.makeText(this, "Threshold must be between 0% and 100%", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String userId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "unknown";
+        Map<String, Object> update = new HashMap<>();
+        update.put("lightThreshold", (double) thresholdVal);
+        update.put("lastUpdated", Timestamp.now());
+        update.put("updatedBy", userId);
+
+        db.collection("system_data").document("device_control").set(update, com.google.firebase.firestore.SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Light intensity threshold saved (" + thresholdVal + "%)", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to save threshold: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void updateIrrigationModeInFirestore(String mode) {
+        String userId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "unknown";
+        Map<String, Object> update = new HashMap<>();
+        update.put("irrigationMode", mode);
+        update.put("lastUpdated", Timestamp.now());
+        update.put("updatedBy", userId);
+
+        db.collection("system_data").document("device_control").set(update, com.google.firebase.firestore.SetOptions.merge())
+                .addOnSuccessListener(aVoid -> Toast.makeText(this, "Irrigation mode set to " + mode, Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to update mode: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void initializeDeviceControl() {
@@ -254,6 +341,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 Map<String, Object> initialControl = new HashMap<>();
                 initialControl.put("waterPumpState", "OFF");
                 initialControl.put("fertilizerPumpState", "OFF");
+                initialControl.put("activeWaterIrrigationId", "");
+                initialControl.put("activeFertilizerIrrigationId", "");
+                initialControl.put("irrigationMode", "AUTOMATIC");
+                initialControl.put("lightThreshold", 70.0);
                 initialControl.put("deviceStatus", "CONNECTED");
                 initialControl.put("lastUpdated", Timestamp.now());
                 initialControl.put("updatedBy", mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "system");
@@ -273,9 +364,53 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         if (waterState != null) currentWaterState = waterState;
                         if (fertState != null) currentFertilizerState = fertState;
 
+                        String waterId = snapshot.getString("activeWaterIrrigationId");
+                        activeWaterIrrigationId = waterId != null ? waterId : "";
+
+                        String fertId = snapshot.getString("activeFertilizerIrrigationId");
+                        activeFertilizerIrrigationId = fertId != null ? fertId : "";
+
+                        Double lightThresh = snapshot.getDouble("lightThreshold");
+                        if (lightThresh != null) configuredLightThreshold = lightThresh;
+
+                        String mode = snapshot.getString("irrigationMode");
+                        if (mode != null) currentIrrigationMode = mode;
+
                         updatePumpUi();
+                        updateAutoLightUi();
                     }
                 });
+    }
+
+    private void updateAutoLightUi() {
+        if (tvLightThresholdDisplay != null) {
+            tvLightThresholdDisplay.setText(String.format(Locale.getDefault(), "%.0f%%", configuredLightThreshold));
+        }
+
+        if (tvSelectedLightThreshold != null && (seekBarLightThreshold != null && !seekBarLightThreshold.isPressed())) {
+            tvSelectedLightThreshold.setText(String.format(Locale.getDefault(), "%.0f%%", configuredLightThreshold));
+            seekBarLightThreshold.setProgress((int) configuredLightThreshold);
+        }
+
+        if (tvIrrigationMode != null) {
+            tvIrrigationMode.setText(currentIrrigationMode);
+        }
+
+        if (switchIrrigationMode != null) {
+            switchIrrigationMode.setOnCheckedChangeListener(null);
+            switchIrrigationMode.setChecked("AUTOMATIC".equalsIgnoreCase(currentIrrigationMode));
+            setupAutoLightControls();
+        }
+
+        if (tvAutoLightPumpStatus != null) {
+            if ("ON".equalsIgnoreCase(currentWaterState) || "RUNNING".equalsIgnoreCase(currentWaterState)) {
+                tvAutoLightPumpStatus.setText("ON");
+                tvAutoLightPumpStatus.setTextColor(ContextCompat.getColor(this, R.color.iot_success));
+            } else {
+                tvAutoLightPumpStatus.setText("OFF");
+                tvAutoLightPumpStatus.setTextColor(Color.GRAY);
+            }
+        }
     }
 
     private void updatePumpUi() {
@@ -316,6 +451,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
             switchFertilizerPump.setChecked("ON".equalsIgnoreCase(currentFertilizerState) || "RUNNING".equalsIgnoreCase(currentFertilizerState));
             setupPumpListeners();
         }
+
+        updateAutoLightUi();
     }
 
     private void setupPumpListeners() {
@@ -365,25 +502,85 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void executeWaterPumpChange(String newState) {
+        if ("ON".equalsIgnoreCase(newState)) {
+            startWaterIrrigationSession("MANUAL");
+        } else {
+            stopWaterIrrigationSession();
+        }
+    }
+
+    private void startWaterIrrigationSession(String trigger) {
         String userId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "unknown";
-        boolean isPumpOn = "ON".equalsIgnoreCase(newState) || "RUNNING".equalsIgnoreCase(newState);
+        String userEmail = mAuth.getCurrentUser() != null && mAuth.getCurrentUser().getEmail() != null ? mAuth.getCurrentUser().getEmail() : userId;
 
-        Map<String, Object> update = new HashMap<>();
-        update.put("waterPumpState", newState);
-        update.put("waterPump", isPumpOn);
-        update.put("water_pump", isPumpOn);
-        update.put("lastUpdated", Timestamp.now());
-        update.put("updatedBy", userId);
+        Timestamp now = Timestamp.now();
+        Map<String, Object> newRecord = new HashMap<>();
+        newRecord.put("type", "WATER");
+        newRecord.put("action", "START");
+        newRecord.put("trigger", trigger != null ? trigger.toUpperCase() : "MANUAL");
+        newRecord.put("durationSeconds", 0);
+        newRecord.put("startTime", now);
+        newRecord.put("status", "RUNNING");
+        newRecord.put("userId", userId);
+        newRecord.put("startedBy", userEmail);
+        newRecord.put("createdAt", now);
 
-        db.collection("system_data").document("device_control").set(update, com.google.firebase.firestore.SetOptions.merge())
+        db.collection("irrigation_history").add(newRecord)
+                .addOnSuccessListener(docRef -> {
+                    String docId = docRef.getId();
+                    Map<String, Object> controlUpdate = new HashMap<>();
+                    controlUpdate.put("waterPumpState", "ON");
+                    controlUpdate.put("waterPump", true);
+                    controlUpdate.put("water_pump", true);
+                    controlUpdate.put("activeWaterIrrigationId", docId);
+                    controlUpdate.put("lastUpdated", now);
+                    controlUpdate.put("updatedBy", userId);
+
+                    db.collection("system_data").document("device_control").set(controlUpdate, com.google.firebase.firestore.SetOptions.merge())
+                            .addOnSuccessListener(aVoid -> {
+                                db.collection("system_data").document("live_telemetry").set(controlUpdate, com.google.firebase.firestore.SetOptions.merge());
+                                Toast.makeText(this, "Water irrigation started", Toast.LENGTH_SHORT).show();
+                            });
+                });
+    }
+
+    private void stopWaterIrrigationSession() {
+        String userId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "unknown";
+        Timestamp now = Timestamp.now();
+
+        if (activeWaterIrrigationId != null && !activeWaterIrrigationId.isEmpty()) {
+            String docId = activeWaterIrrigationId;
+            db.collection("irrigation_history").document(docId).get().addOnSuccessListener(snapshot -> {
+                if (snapshot.exists()) {
+                    Timestamp startTime = snapshot.getTimestamp("startTime");
+                    long durationSecs = 0;
+                    if (startTime != null) {
+                        durationSecs = Math.max(0, now.getSeconds() - startTime.getSeconds());
+                    }
+
+                    Map<String, Object> historyUpdate = new HashMap<>();
+                    historyUpdate.put("endTime", now);
+                    historyUpdate.put("durationSeconds", durationSecs);
+                    historyUpdate.put("status", "STOPPED");
+                    historyUpdate.put("action", "STOP");
+
+                    db.collection("irrigation_history").document(docId).update(historyUpdate);
+                }
+            });
+        }
+
+        Map<String, Object> controlUpdate = new HashMap<>();
+        controlUpdate.put("waterPumpState", "OFF");
+        controlUpdate.put("waterPump", false);
+        controlUpdate.put("water_pump", false);
+        controlUpdate.put("activeWaterIrrigationId", "");
+        controlUpdate.put("lastUpdated", now);
+        controlUpdate.put("updatedBy", userId);
+
+        db.collection("system_data").document("device_control").set(controlUpdate, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
-                    db.collection("system_data").document("live_telemetry").set(update, com.google.firebase.firestore.SetOptions.merge());
-                    Toast.makeText(this, "Water irrigation set to " + newState, Toast.LENGTH_SHORT).show();
-                    logIrrigationEvent("Water", newState, "Manual");
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to update water pump: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    updatePumpUi();
+                    db.collection("system_data").document("live_telemetry").set(controlUpdate, com.google.firebase.firestore.SetOptions.merge());
+                    Toast.makeText(this, "Water irrigation stopped", Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -418,40 +615,86 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void executeFertilizerPumpChange(String newState) {
-        String userId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "unknown";
-        boolean isPumpOn = "ON".equalsIgnoreCase(newState) || "RUNNING".equalsIgnoreCase(newState);
-
-        Map<String, Object> update = new HashMap<>();
-        update.put("fertilizerPumpState", newState);
-        update.put("fertilizerPump", isPumpOn);
-        update.put("fertilizer_pump", isPumpOn);
-        update.put("lastUpdated", Timestamp.now());
-        update.put("updatedBy", userId);
-
-        db.collection("system_data").document("device_control").set(update, com.google.firebase.firestore.SetOptions.merge())
-                .addOnSuccessListener(aVoid -> {
-                    db.collection("system_data").document("live_telemetry").set(update, com.google.firebase.firestore.SetOptions.merge());
-                    Toast.makeText(this, "Fertilizer irrigation set to " + newState, Toast.LENGTH_SHORT).show();
-                    logIrrigationEvent("Fertilizer", newState, "Manual");
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to update fertilizer pump: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    updatePumpUi();
-                });
+        if ("ON".equalsIgnoreCase(newState)) {
+            startFertilizerIrrigationSession("MANUAL");
+        } else {
+            stopFertilizerIrrigationSession();
+        }
     }
 
-    private void logIrrigationEvent(String type, String action, String source) {
+    private void startFertilizerIrrigationSession(String trigger) {
         String userId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "unknown";
         String userEmail = mAuth.getCurrentUser() != null && mAuth.getCurrentUser().getEmail() != null ? mAuth.getCurrentUser().getEmail() : userId;
 
-        Map<String, Object> historyRecord = new HashMap<>();
-        historyRecord.put("irrigationType", type);
-        historyRecord.put("action", action);
-        historyRecord.put("timestamp", Timestamp.now());
-        historyRecord.put("startedBy", userEmail);
-        historyRecord.put("source", source);
+        Timestamp now = Timestamp.now();
+        Map<String, Object> newRecord = new HashMap<>();
+        newRecord.put("type", "FERTILIZER");
+        newRecord.put("action", "START");
+        newRecord.put("trigger", trigger != null ? trigger.toUpperCase() : "MANUAL");
+        newRecord.put("durationSeconds", 0);
+        newRecord.put("startTime", now);
+        newRecord.put("status", "RUNNING");
+        newRecord.put("userId", userId);
+        newRecord.put("startedBy", userEmail);
+        newRecord.put("createdAt", now);
 
-        db.collection("irrigation_history").add(historyRecord);
+        db.collection("irrigation_history").add(newRecord)
+                .addOnSuccessListener(docRef -> {
+                    String docId = docRef.getId();
+                    Map<String, Object> controlUpdate = new HashMap<>();
+                    controlUpdate.put("fertilizerPumpState", "ON");
+                    controlUpdate.put("fertilizerPump", true);
+                    controlUpdate.put("fertilizer_pump", true);
+                    controlUpdate.put("activeFertilizerIrrigationId", docId);
+                    controlUpdate.put("lastUpdated", now);
+                    controlUpdate.put("updatedBy", userId);
+
+                    db.collection("system_data").document("device_control").set(controlUpdate, com.google.firebase.firestore.SetOptions.merge())
+                            .addOnSuccessListener(aVoid -> {
+                                db.collection("system_data").document("live_telemetry").set(controlUpdate, com.google.firebase.firestore.SetOptions.merge());
+                                Toast.makeText(this, "Fertilizer distribution started", Toast.LENGTH_SHORT).show();
+                            });
+                });
+    }
+
+    private void stopFertilizerIrrigationSession() {
+        String userId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "unknown";
+        Timestamp now = Timestamp.now();
+
+        if (activeFertilizerIrrigationId != null && !activeFertilizerIrrigationId.isEmpty()) {
+            String docId = activeFertilizerIrrigationId;
+            db.collection("irrigation_history").document(docId).get().addOnSuccessListener(snapshot -> {
+                if (snapshot.exists()) {
+                    Timestamp startTime = snapshot.getTimestamp("startTime");
+                    long durationSecs = 0;
+                    if (startTime != null) {
+                        durationSecs = Math.max(0, now.getSeconds() - startTime.getSeconds());
+                    }
+
+                    Map<String, Object> historyUpdate = new HashMap<>();
+                    historyUpdate.put("endTime", now);
+                    historyUpdate.put("durationSeconds", durationSecs);
+                    historyUpdate.put("status", "STOPPED");
+                    historyUpdate.put("action", "STOP");
+
+                    db.collection("irrigation_history").document(docId).update(historyUpdate);
+                }
+            });
+        }
+
+        Map<String, Object> controlUpdate = new HashMap<>();
+        controlUpdate.put("fertilizerPumpState", "OFF");
+        controlUpdate.put("fertilizerPump", false);
+        controlUpdate.put("fertilizer_pump", false);
+        controlUpdate.put("activeFertilizerIrrigationId", "");
+        controlUpdate.put("lastUpdated", now);
+        controlUpdate.put("updatedBy", userId);
+
+        db.collection("system_data").document("device_control").set(controlUpdate, com.google.firebase.firestore.SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    db.collection("system_data").document("live_telemetry").set(controlUpdate, com.google.firebase.firestore.SetOptions.merge());
+                    Toast.makeText(this, "Fertilizer distribution stopped", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void startScheduleListener() {
@@ -516,174 +759,117 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         }
                     }
                 });
-
-        startAutomatedScheduleCheckRunner();
     }
 
-    private void startAutomatedScheduleCheckRunner() {
-        if (scheduleRunnerHandler != null) return;
-        scheduleRunnerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private void startScheduleRunner() {
+        scheduleRunnerHandler = new Handler(Looper.getMainLooper());
         scheduleRunnerRunnable = new Runnable() {
             @Override
             public void run() {
-                checkAndExecuteSchedules();
+                checkAndTriggerSchedules();
                 if (scheduleRunnerHandler != null) {
-                    scheduleRunnerHandler.postDelayed(this, 15000);
+                    scheduleRunnerHandler.postDelayed(this, 10000); // Check every 10 seconds
                 }
             }
         };
         scheduleRunnerHandler.post(scheduleRunnerRunnable);
     }
 
-    private boolean shouldRunScheduleToday(String lastExecutedDateStr, String repeatType) {
-        if (lastExecutedDateStr == null || lastExecutedDateStr.isEmpty()) {
-            return true;
-        }
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-        try {
-            Date lastDate = sdf.parse(lastExecutedDateStr);
-            Date todayDate = sdf.parse(sdf.format(new Date()));
-            if (lastDate == null || todayDate == null) return true;
+    private void checkAndTriggerSchedules() {
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat minuteFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
 
-            long diffInMillis = todayDate.getTime() - lastDate.getTime();
-            long daysDiff = diffInMillis / (24 * 60 * 60 * 1000L);
+        String currentTimeFormatted = timeFormat.format(cal.getTime());
+        String currentDateFormatted = dateFormat.format(cal.getTime());
+        String currentMinuteFormatted = minuteFormat.format(cal.getTime());
 
-            int requiredDays = 1;
-            if (repeatType != null) {
-                String lower = repeatType.toLowerCase(Locale.US);
-                if (lower.contains("2 days")) {
-                    requiredDays = 2;
-                } else if (lower.contains("3 days")) {
-                    requiredDays = 3;
-                } else if (lower.contains("7 days")) {
-                    requiredDays = 7;
-                } else if (lower.contains("14 days")) {
-                    requiredDays = 14;
-                } else {
-                    requiredDays = 1;
+        // Check Water Schedule
+        if (waterScheduleEnabled && waterScheduleTime != null && !waterScheduleTime.isEmpty()) {
+            if (waterScheduleTime.equalsIgnoreCase(currentTimeFormatted)) {
+                if (shouldRunToday(waterRepeatType, lastExecutedWaterDate, cal)) {
+                    if (!isWaterScheduleRunningCurrently && !currentMinuteFormatted.equals(lastExecutedWaterMinute)) {
+                        triggerWaterSchedule(currentDateFormatted, currentMinuteFormatted);
+                    }
                 }
             }
-            return daysDiff >= requiredDays;
+        }
+
+        // Check Fertilizer Schedule
+        if (fertScheduleEnabled && fertScheduleTime != null && !fertScheduleTime.isEmpty()) {
+            if (fertScheduleTime.equalsIgnoreCase(currentTimeFormatted)) {
+                if (shouldRunToday(fertRepeatType, lastExecutedFertilizerDate, cal)) {
+                    if (!isFertScheduleRunningCurrently && !currentMinuteFormatted.equals(lastExecutedFertilizerMinute)) {
+                        triggerFertilizerSchedule(currentDateFormatted, currentMinuteFormatted);
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean shouldRunToday(String repeatType, String lastExecDateStr, Calendar currentCal) {
+        if (lastExecDateStr == null || lastExecDateStr.isEmpty()) return true;
+
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date lastDate = dateFormat.parse(lastExecDateStr);
+            if (lastDate == null) return true;
+
+            Calendar lastCal = Calendar.getInstance();
+            lastCal.setTime(lastDate);
+
+            long diffMs = currentCal.getTimeInMillis() - lastCal.getTimeInMillis();
+            long diffDays = diffMs / (24 * 60 * 60 * 1000);
+
+            if (diffDays <= 0) return false;
+
+            int requiredDays = 1;
+            if ("Every 2 Days".equalsIgnoreCase(repeatType)) requiredDays = 2;
+            else if ("Every 3 Days".equalsIgnoreCase(repeatType)) requiredDays = 3;
+            else if ("Every 7 Days".equalsIgnoreCase(repeatType)) requiredDays = 7;
+            else if ("Every 14 Days".equalsIgnoreCase(repeatType)) requiredDays = 14;
+
+            return diffDays >= requiredDays;
         } catch (Exception e) {
             return true;
         }
     }
 
-    private void checkAndExecuteSchedules() {
-        SimpleDateFormat sdfTime = new SimpleDateFormat("hh:mm a", Locale.US);
-        SimpleDateFormat sdfMinute = new SimpleDateFormat("yyyy-MM-dd hh:mm a", Locale.US);
-        SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    private void triggerWaterSchedule(String currentDate, String currentMinute) {
+        isWaterScheduleRunningCurrently = true;
+        lastExecutedWaterDate = currentDate;
+        lastExecutedWaterMinute = currentMinute;
 
-        Date now = new Date();
-        String currentTimeFormatted = sdfTime.format(now);
-        String currentMinuteFormatted = sdfMinute.format(now);
-        String currentDateFormatted = sdfDate.format(now);
+        Map<String, Object> updateExec = new HashMap<>();
+        updateExec.put("lastExecutedDate", currentDate);
+        db.collection("schedules").document("water").set(updateExec, com.google.firebase.firestore.SetOptions.merge());
 
-        // Water Schedule Check
-        if (waterScheduleEnabled && !waterScheduleTime.isEmpty()) {
-            if (currentTimeFormatted.equalsIgnoreCase(waterScheduleTime.trim())) {
-                if (!isWaterScheduleRunningCurrently && !currentMinuteFormatted.equals(lastExecutedWaterMinute)) {
-                    if (shouldRunScheduleToday(lastExecutedWaterDate, waterRepeatType)) {
-                        isWaterScheduleRunningCurrently = true;
-                        lastExecutedWaterMinute = currentMinuteFormatted;
-                        lastExecutedWaterDate = currentDateFormatted;
+        startWaterIrrigationSession("SCHEDULE");
 
-                        db.collection("schedules").document("water").update("lastExecutedDate", currentDateFormatted);
-                        Log.d("AgriFlow", "⏰ Water Schedule Match! Turning Water Pump ON for " + waterScheduleDurationMins + " mins.");
-                        
-                        Map<String, Object> waterStartUpdate = new HashMap<>();
-                        waterStartUpdate.put("waterPumpState", "RUNNING");
-                        waterStartUpdate.put("waterPump", true);
-                        waterStartUpdate.put("water_pump", true);
-                        waterStartUpdate.put("lastUpdated", Timestamp.now());
-                        db.collection("system_data").document("device_control").update(waterStartUpdate);
-                        db.collection("system_data").document("live_telemetry").update(waterStartUpdate);
+        long durationMs = waterScheduleDurationMins * 60 * 1000;
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            stopWaterIrrigationSession();
+            isWaterScheduleRunningCurrently = false;
+        }, Math.max(5000, durationMs));
+    }
 
-                        logIrrigationEvent("Water", "RUNNING", "Automated Schedule");
+    private void triggerFertilizerSchedule(String currentDate, String currentMinute) {
+        isFertScheduleRunningCurrently = true;
+        lastExecutedFertilizerDate = currentDate;
+        lastExecutedFertilizerMinute = currentMinute;
 
-                        AppNotificationManager.getInstance(this).triggerAlertNotification(
-                                "Watering Schedule Active",
-                                "Scheduled water irrigation started at " + currentTimeFormatted + " for " + waterScheduleDurationMins + " minutes.",
-                                "water",
-                                0, 0, "Normal"
-                        );
+        Map<String, Object> updateExec = new HashMap<>();
+        updateExec.put("lastExecutedDate", currentDate);
+        db.collection("schedules").document("fertilizer").set(updateExec, com.google.firebase.firestore.SetOptions.merge());
 
-                        long durationMillis = waterScheduleDurationMins * 60 * 1000L;
-                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                            Map<String, Object> waterStopUpdate = new HashMap<>();
-                            waterStopUpdate.put("waterPumpState", "SCHEDULED");
-                            waterStopUpdate.put("waterPump", false);
-                            waterStopUpdate.put("water_pump", false);
-                            waterStopUpdate.put("lastUpdated", Timestamp.now());
-                            db.collection("system_data").document("device_control").update(waterStopUpdate);
-                            db.collection("system_data").document("live_telemetry").update(waterStopUpdate);
+        startFertilizerIrrigationSession("SCHEDULE");
 
-                            isWaterScheduleRunningCurrently = false;
-                            logIrrigationEvent("Water", "COMPLETED", "Automated Schedule");
-                            AppNotificationManager.getInstance(AdminDashboardActivity.this).triggerAlertNotification(
-                                    "Watering Schedule Completed",
-                                    "Scheduled water irrigation completed.",
-                                    "water",
-                                    0, 0, "Normal"
-                            );
-                        }, durationMillis);
-                    }
-                }
-            }
-        }
-
-        // Fertilizer Schedule Check
-        if (fertScheduleEnabled && !fertScheduleTime.isEmpty()) {
-            if (currentTimeFormatted.equalsIgnoreCase(fertScheduleTime.trim())) {
-                if (!isFertScheduleRunningCurrently && !currentMinuteFormatted.equals(lastExecutedFertilizerMinute)) {
-                    if (shouldRunScheduleToday(lastExecutedFertilizerDate, fertRepeatType)) {
-                        isFertScheduleRunningCurrently = true;
-                        lastExecutedFertilizerMinute = currentMinuteFormatted;
-                        lastExecutedFertilizerDate = currentDateFormatted;
-
-                        db.collection("schedules").document("fertilizer").update("lastExecutedDate", currentDateFormatted);
-                        Log.d("AgriFlow", "⏰ Fertilizer Schedule Match! Turning Fertilizer Pump ON for " + fertScheduleDurationSecs + " secs.");
-                        
-                        Map<String, Object> fertStartUpdate = new HashMap<>();
-                        fertStartUpdate.put("fertilizerPumpState", "RUNNING");
-                        fertStartUpdate.put("fertilizerPump", true);
-                        fertStartUpdate.put("fertilizer_pump", true);
-                        fertStartUpdate.put("lastUpdated", Timestamp.now());
-                        db.collection("system_data").document("device_control").update(fertStartUpdate);
-                        db.collection("system_data").document("live_telemetry").update(fertStartUpdate);
-
-                        logIrrigationEvent("Fertilizer", "RUNNING", "Automated Schedule");
-
-                        AppNotificationManager.getInstance(this).triggerAlertNotification(
-                                "Fertilizer Schedule Active",
-                                "Scheduled fertilizer distribution started at " + currentTimeFormatted + " for " + fertScheduleDurationSecs + " seconds.",
-                                "sunlight",
-                                0, 0, "Normal"
-                        );
-
-                        long durationMillis = fertScheduleDurationSecs * 1000L;
-                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                            Map<String, Object> fertStopUpdate = new HashMap<>();
-                            fertStopUpdate.put("fertilizerPumpState", "SCHEDULED");
-                            fertStopUpdate.put("fertilizerPump", false);
-                            fertStopUpdate.put("fertilizer_pump", false);
-                            fertStopUpdate.put("lastUpdated", Timestamp.now());
-                            db.collection("system_data").document("device_control").update(fertStopUpdate);
-                            db.collection("system_data").document("live_telemetry").update(fertStopUpdate);
-
-                            isFertScheduleRunningCurrently = false;
-                            logIrrigationEvent("Fertilizer", "COMPLETED", "Automated Schedule");
-                            AppNotificationManager.getInstance(AdminDashboardActivity.this).triggerAlertNotification(
-                                    "Fertilizer Schedule Completed",
-                                    "Scheduled fertilizer distribution completed.",
-                                    "sunlight",
-                                    0, 0, "Normal"
-                            );
-                        }, durationMillis);
-                    }
-                }
-            }
-        }
+        long durationMs = fertScheduleDurationSecs * 1000;
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            stopFertilizerIrrigationSession();
+            isFertScheduleRunningCurrently = false;
+        }, Math.max(3000, durationMs));
     }
 
     private void startNotificationListener() {
@@ -750,6 +936,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     if (light == null) light = getSafeDouble(snapshot, "lightIntensity");
                     if (light == null) light = getSafeDouble(snapshot, "light_density");
 
+                    if (light != null && tvCurrentLightIntensity != null) {
+                        tvCurrentLightIntensity.setText(String.format(Locale.getDefault(), "%.0f%%", light));
+                    }
+
                     if (moisture != null) {
                         tvSoilMoisture.setText(String.format(Locale.getDefault(), "%.0f%%", moisture));
                         pbSoilMoisture.setProgress(moisture.intValue());
@@ -806,18 +996,15 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void updateTemperatureIndicator(double temp) {
-        if (vTempIndicator == null) return;
         float min = 0f;
         float max = 50f;
         float bias = (float) ((temp - min) / (max - min));
         bias = Math.max(0f, Math.min(1f, bias));
 
-        if (vTempIndicator.getLayoutParams() instanceof androidx.constraintlayout.widget.ConstraintLayout.LayoutParams) {
-            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams params =
-                    (androidx.constraintlayout.widget.ConstraintLayout.LayoutParams) vTempIndicator.getLayoutParams();
-            params.horizontalBias = bias;
-            vTempIndicator.setLayoutParams(params);
-        }
+        androidx.constraintlayout.widget.ConstraintLayout.LayoutParams params =
+                (androidx.constraintlayout.widget.ConstraintLayout.LayoutParams) vTempIndicator.getLayoutParams();
+        params.horizontalBias = bias;
+        vTempIndicator.setLayoutParams(params);
     }
 
     private void updateHumidityStatus(double humidity) {
